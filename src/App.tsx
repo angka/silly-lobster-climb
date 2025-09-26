@@ -52,7 +52,7 @@ const App = () => {
               path="/dashboard"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <DashboardPage />
+                  <DashboardPage onLogout={handleLogout} /> {/* Pass handleLogout here */}
                 </ProtectedRoute>
               }
             />

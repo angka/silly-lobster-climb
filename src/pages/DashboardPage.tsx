@@ -14,7 +14,11 @@ interface Patient extends PatientFormData {
   id: string;
 }
 
-const DashboardPage: React.FC = () => {
+interface DashboardPageProps {
+  onLogout: () => void; // Add onLogout prop
+}
+
+const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => { // Destructure onLogout
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'RGP' | 'Scleral lens'>('All');
@@ -81,7 +85,7 @@ const DashboardPage: React.FC = () => {
   });
 
   return (
-    <Layout showLogout={true}>
+    <Layout showLogout={true} onLogout={onLogout}> {/* Pass onLogout to Layout */}
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left Panel for Tabs */}
         <div className="md:w-1/4 lg:w-1/5 p-4 bg-card rounded-lg shadow-sm">
