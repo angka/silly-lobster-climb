@@ -52,7 +52,7 @@ const DashboardPage: React.FC = () => {
               <PlusCircle className="mr-2 h-4 w-4" /> Add New Patient
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[500px]"> {/* Reduced max-width here */}
             <DialogHeader>
               <DialogTitle>Add New Patient</DialogTitle>
             </DialogHeader>
