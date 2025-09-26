@@ -10,8 +10,9 @@ export interface PatientFormData {
   dateOfBirth: Date | undefined;
   gender: 'Male' | 'Female' | 'Other' | '';
   contactNumber: string;
-  doctorName: string; // Changed from email to doctorName
+  doctorName: string;
   address: string;
+  lensCategory: 'RGP' | 'Scleral lens' | ''; // New field for lens category
   notes?: string;
 }
 
@@ -28,8 +29,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
   const [year, setYear] = useState('');
   const [gender, setGender] = useState<PatientFormData['gender']>(initialData?.gender || '');
   const [contactNumber, setContactNumber] = useState(initialData?.contactNumber || '');
-  const [doctorName, setDoctorName] = useState(initialData?.doctorName || ''); // New state for doctor's name
+  const [doctorName, setDoctorName] = useState(initialData?.doctorName || '');
   const [address, setAddress] = useState(initialData?.address || '');
+  const [lensCategory, setLensCategory] = useState<PatientFormData['lensCategory']>(initialData?.lensCategory || ''); // New state for lens category
   const [notes, setNotes] = useState(initialData?.notes || '');
 
   useEffect(() => {
@@ -38,6 +40,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       setDay(dob.getDate().toString());
       setMonth((dob.getMonth() + 1).toString()); // Month is 0-indexed
       setYear(dob.getFullYear().toString());
+    }
+    if (initialData?.lensCategory) {
+      setLensCategory(initialData.lensCategory);
     }
   }, [initialData]);
 
@@ -72,8 +77,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       dateOfBirth: parsedDateOfBirth,
       gender,
       contactNumber,
-      doctorName, // Pass doctorName
+      doctorName,
       address,
+      lensCategory, // Pass lensCategory
       notes,
     });
   };
@@ -131,8 +137,20 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
         <Input id="contactNumber" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
       </div>
       <div>
-        <Label htmlFor="doctorName">Doctor's Name</Label> {/* New field */}
+        <Label htmlFor="doctorName">Doctor's Name</Label>
         <Input id="doctorName" value={doctorName} onChange={(e) => setDoctorName(e.target.value)} />
+      </div>
+      <div>
+        <Label htmlFor="lensCategory">Lens Category</Label> {/* New field */}
+        <Select value={lensCategory} onValueChange={(value: PatientFormData['lensCategory']) => setLensCategory(value)}>
+          <SelectTrigger id="lensCategory">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="RGP">RGP</SelectItem>
+            <SelectItem value="Scleral lens">Scleral lens</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <Label htmlFor="address">Address</Label>
