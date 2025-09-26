@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Import useRef
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search, Download } from 'lucide-react'; // Import Download icon
+import { PlusCircle, Edit, Trash2, Search, Download, Upload } from 'lucide-react'; // Import Upload icon
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -28,6 +28,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for hidden file input
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -103,6 +105,41 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
     }
   };
 
+  const handleImportPatients = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importedData: Patient[] = JSON.parse(content);
+
+        // Basic validation for imported data structure
+        if (!Array.isArray(importedData) || !importedData.every(p => p.id && p.name && p.medicalRecordNumber)) {
+          showError('Invalid file format. Please upload a valid patient JSON file.');
+          return;
+        }
+
+        // Convert date strings back to Date objects
+        const patientsWithDates = importedData.map(p => ({
+          ...p,
+          dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
+          dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
+        }));
+
+        setPatients(patientsWithDates);
+        showSuccess('Patient data imported successfully!');
+      } catch (error) {
+        console.error('Failed to import patient data:', error);
+        showError('Failed to import patient data. Please ensure it is a valid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const filteredPatients = patients.filter(patient => {
     const matchesCategory = selectedCategory === 'All' || patient.lensCategory === selectedCategory;
     const matchesSearch = searchQuery.toLowerCase() === '' ||
@@ -128,6 +165,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
             <div className="flex space-x-2"> {/* Group buttons */}
               <Button onClick={handleExportPatients} variant="outline">
                 <Download className="mr-2 h-4 w-4" /> Export Data
+              </Button>
+              <Input
+                type="file"
+                accept=".json"
+                ref={fileInputRef}
+                onChange={handleImportPatients}
+                className="hidden"
+              />
+              <Button onClick={() => fileInputRef.current?.click()} variant="outline">
+                <Upload className="mr-2 h-4 w-4" /> Import Data
               </Button>
               <Dialog open={isNewPatientDialogOpen} onOpenChange={setIsNewPatientDialogOpen}>
                 <DialogTrigger asChild>
