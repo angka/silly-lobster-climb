@@ -12,7 +12,8 @@ export interface PatientFormData {
   contactNumber: string;
   doctorName: string;
   address: string;
-  lensCategory: 'RGP' | 'Scleral lens' | ''; // New field for lens category
+  lensCategory: 'RGP' | 'Scleral lens' | '';
+  medicalRecordNumber: string; // New field for medical record number
   notes?: string;
 }
 
@@ -31,7 +32,8 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
   const [contactNumber, setContactNumber] = useState(initialData?.contactNumber || '');
   const [doctorName, setDoctorName] = useState(initialData?.doctorName || '');
   const [address, setAddress] = useState(initialData?.address || '');
-  const [lensCategory, setLensCategory] = useState<PatientFormData['lensCategory']>(initialData?.lensCategory || ''); // New state for lens category
+  const [lensCategory, setLensCategory] = useState<PatientFormData['lensCategory']>(initialData?.lensCategory || '');
+  const [medicalRecordNumber, setMedicalRecordNumber] = useState(initialData?.medicalRecordNumber || ''); // New state for medical record number
   const [notes, setNotes] = useState(initialData?.notes || '');
 
   useEffect(() => {
@@ -43,6 +45,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
     }
     if (initialData?.lensCategory) {
       setLensCategory(initialData.lensCategory);
+    }
+    if (initialData?.medicalRecordNumber) {
+      setMedicalRecordNumber(initialData.medicalRecordNumber);
     }
   }, [initialData]);
 
@@ -79,7 +84,8 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       contactNumber,
       doctorName,
       address,
-      lensCategory, // Pass lensCategory
+      lensCategory,
+      medicalRecordNumber, // Pass medicalRecordNumber
       notes,
     });
   };
@@ -89,6 +95,10 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       <div>
         <Label htmlFor="name">Patient Name</Label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+      </div>
+      <div>
+        <Label htmlFor="medicalRecordNumber">Medical Record Number</Label> {/* New field */}
+        <Input id="medicalRecordNumber" value={medicalRecordNumber} onChange={(e) => setMedicalRecordNumber(e.target.value)} required />
       </div>
       <div>
         <Label>Date of Birth</Label>
@@ -141,7 +151,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
         <Input id="doctorName" value={doctorName} onChange={(e) => setDoctorName(e.target.value)} />
       </div>
       <div>
-        <Label htmlFor="lensCategory">Lens Category</Label> {/* New field */}
+        <Label htmlFor="lensCategory">Lens Category</Label>
         <Select value={lensCategory} onValueChange={(value: PatientFormData['lensCategory']) => setLensCategory(value)}>
           <SelectTrigger id="lensCategory">
             <SelectValue placeholder="Select category" />

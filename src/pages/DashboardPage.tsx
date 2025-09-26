@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input'; // Import Input for search bar
+import { PlusCircle, Edit, Trash2, Search } from 'lucide-react'; // Import Search icon
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -15,10 +16,10 @@ interface Patient extends PatientFormData {
 }
 
 interface DashboardPageProps {
-  onLogout: () => void; // Add onLogout prop
+  onLogout: () => void;
 }
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => { // Destructure onLogout
+const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'RGP' | 'Scleral lens'>('All');
@@ -26,6 +27,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => { // Destr
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -78,14 +80,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => { // Destr
   };
 
   const filteredPatients = patients.filter(patient => {
-    if (selectedCategory === 'All') {
-      return true;
-    }
-    return patient.lensCategory === selectedCategory;
+    const matchesCategory = selectedCategory === 'All' || patient.lensCategory === selectedCategory;
+    const matchesSearch = searchQuery.toLowerCase() === '' ||
+                          patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          patient.medicalRecordNumber.toLowerCase().includes(searchQuery.toLowerCase()); // Search by medical record number
+
+    return matchesCategory && matchesSearch;
   });
 
   return (
-    <Layout showLogout={true} onLogout={onLogout}> {/* Pass onLogout to Layout */}
+    <Layout showLogout={true} onLogout={onLogout}>
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left Panel for Tabs */}
         <div className="md:w-1/4 lg:w-1/5 p-4 bg-card rounded-lg shadow-sm">
@@ -112,9 +116,21 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => { // Destr
             </Dialog>
           </div>
 
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search patients by name or medical record number..."
+              className="pl-9 pr-4 py-2 w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPatients.length === 0 ? (
-              <p className="col-span-full text-center text-muted-foreground">No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients added yet. Click "Add New Patient" to get started!</p>
+              <p className="col-span-full text-center text-muted-foreground">No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients found. {searchQuery && `for "${searchQuery}"`}</p>
             ) : (
               filteredPatients.map((patient) => (
                 <Card key={patient.id} className="hover:shadow-lg transition-shadow">
@@ -126,6 +142,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => { // Destr
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground">
+                    <p>MRN: {patient.medicalRecordNumber}</p> {/* Display medical record number */}
                     <p>Category: {patient.lensCategory || 'N/A'}</p>
                     <p>DOB: {patient.dateOfBirth ? patient.dateOfBirth.toLocaleDateString() : 'N/A'}</p>
                     <p>Gender: {patient.gender}</p>
