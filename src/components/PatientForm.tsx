@@ -4,6 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 
 export interface PatientFormData {
   name: string;
@@ -13,8 +18,9 @@ export interface PatientFormData {
   doctorName: string;
   address: string;
   lensCategory: 'RGP' | 'Scleral lens' | '';
-  medicalRecordNumber: string; // New field for medical record number
+  medicalRecordNumber: string;
   notes?: string;
+  dateOfVisit?: Date; // New field for date of visit
 }
 
 interface PatientFormProps {
@@ -33,8 +39,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
   const [doctorName, setDoctorName] = useState(initialData?.doctorName || '');
   const [address, setAddress] = useState(initialData?.address || '');
   const [lensCategory, setLensCategory] = useState<PatientFormData['lensCategory']>(initialData?.lensCategory || '');
-  const [medicalRecordNumber, setMedicalRecordNumber] = useState(initialData?.medicalRecordNumber || ''); // New state for medical record number
+  const [medicalRecordNumber, setMedicalRecordNumber] = useState(initialData?.medicalRecordNumber || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
+  const [dateOfVisit, setDateOfVisit] = useState<Date | undefined>(initialData?.dateOfVisit); // New state for date of visit
 
   useEffect(() => {
     if (initialData?.dateOfBirth) {
@@ -48,6 +55,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
     }
     if (initialData?.medicalRecordNumber) {
       setMedicalRecordNumber(initialData.medicalRecordNumber);
+    }
+    if (initialData?.dateOfVisit) {
+      setDateOfVisit(initialData.dateOfVisit);
     }
   }, [initialData]);
 
@@ -85,8 +95,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       doctorName,
       address,
       lensCategory,
-      medicalRecordNumber, // Pass medicalRecordNumber
+      medicalRecordNumber,
       notes,
+      dateOfVisit, // Pass dateOfVisit
     });
   };
 
@@ -97,7 +108,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
       <div>
-        <Label htmlFor="medicalRecordNumber">Medical Record Number</Label> {/* New field */}
+        <Label htmlFor="medicalRecordNumber">Medical Record Number</Label>
         <Input id="medicalRecordNumber" value={medicalRecordNumber} onChange={(e) => setMedicalRecordNumber(e.target.value)} required />
       </div>
       <div>
@@ -128,6 +139,31 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
             className="w-1/3"
           />
         </div>
+      </div>
+      <div>
+        <Label htmlFor="dateOfVisit">Date of Visit</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !dateOfVisit && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateOfVisit ? format(dateOfVisit, "PPP") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={dateOfVisit}
+              onSelect={setDateOfVisit}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
       <div>
         <Label htmlFor="gender">Gender</Label>

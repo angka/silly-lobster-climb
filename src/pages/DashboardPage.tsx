@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input'; // Import Input for search bar
-import { PlusCircle, Edit, Trash2, Search } from 'lucide-react'; // Import Search icon
+import { Input } from '@/components/ui/input';
+import { PlusCircle, Edit, Trash2, Search } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
 import PatientCategoryTabs from '@/components/PatientCategoryTabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Import table components
 
 interface Patient extends PatientFormData {
   id: string;
@@ -27,7 +27,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -35,6 +35,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
       setPatients(JSON.parse(storedPatients).map((p: Patient) => ({
         ...p,
         dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
+        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined, // Parse dateOfVisit
       })));
     }
   }, []);
@@ -83,7 +84,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
     const matchesCategory = selectedCategory === 'All' || patient.lensCategory === selectedCategory;
     const matchesSearch = searchQuery.toLowerCase() === '' ||
                           patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          patient.medicalRecordNumber.toLowerCase().includes(searchQuery.toLowerCase()); // Search by medical record number
+                          patient.medicalRecordNumber.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesCategory && matchesSearch;
   });
@@ -128,51 +129,64 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPatients.length === 0 ? (
-              <p className="col-span-full text-center text-muted-foreground">No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients found. {searchQuery && `for "${searchQuery}"`}</p>
-            ) : (
-              filteredPatients.map((patient) => (
-                <Card key={patient.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-xl">
-                      <Link to={`/patients/${patient.id}`} className="hover:underline">
-                        {patient.name}
-                      </Link>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    <p>MRN: {patient.medicalRecordNumber}</p> {/* Display medical record number */}
-                    <p>Category: {patient.lensCategory || 'N/A'}</p>
-                    <p>DOB: {patient.dateOfBirth ? patient.dateOfBirth.toLocaleDateString() : 'N/A'}</p>
-                    <p>Gender: {patient.gender}</p>
-                    <p>Contact: {patient.contactNumber || 'N/A'}</p>
-                    <div className="flex justify-end space-x-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingPatient(patient);
-                          setIsEditDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4 mr-1" /> Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          setPatientToDelete(patient);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" /> Delete
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>MRN</TableHead>
+                  <TableHead>Date of Visit</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPatients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients found. {searchQuery && `for "${searchQuery}"`}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredPatients.map((patient) => (
+                    <TableRow key={patient.id}>
+                      <TableCell className="font-medium">
+                        <Link to={`/patients/${patient.id}`} className="hover:underline">
+                          {patient.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{patient.medicalRecordNumber}</TableCell>
+                      <TableCell>{patient.dateOfVisit ? patient.dateOfVisit.toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingPatient(patient);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit {patient.name}</span>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setPatientToDelete(patient);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete {patient.name}</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>
