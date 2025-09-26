@@ -1,14 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 export interface PatientFormData {
   name: string;
@@ -28,16 +23,59 @@ interface PatientFormProps {
 
 const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCancel }) => {
   const [name, setName] = useState(initialData?.name || '');
-  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(initialData?.dateOfBirth);
+  const [day, setDay] = useState('');
+  const [month, setMonth] = useState('');
+  const [year, setYear] = useState('');
   const [gender, setGender] = useState<PatientFormData['gender']>(initialData?.gender || '');
   const [contactNumber, setContactNumber] = useState(initialData?.contactNumber || '');
   const [email, setEmail] = useState(initialData?.email || '');
   const [address, setAddress] = useState(initialData?.address || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
 
+  useEffect(() => {
+    if (initialData?.dateOfBirth) {
+      const dob = initialData.dateOfBirth;
+      setDay(dob.getDate().toString());
+      setMonth((dob.getMonth() + 1).toString()); // Month is 0-indexed
+      setYear(dob.getFullYear().toString());
+    }
+  }, [initialData]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ name, dateOfBirth, gender, contactNumber, email, address, notes });
+
+    let parsedDateOfBirth: Date | undefined = undefined;
+    const dayNum = parseInt(day, 10);
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+
+    // Basic validation for date components
+    if (
+      !isNaN(dayNum) && !isNaN(monthNum) && !isNaN(yearNum) &&
+      dayNum > 0 && dayNum <= 31 &&
+      monthNum > 0 && monthNum <= 12 &&
+      yearNum >= 1900 && yearNum <= new Date().getFullYear() + 5 // A reasonable year range
+    ) {
+      const tempDate = new Date(yearNum, monthNum - 1, dayNum);
+      // Check to ensure the date components match, preventing rollovers (e.g., Feb 30 becoming Mar 1)
+      if (
+        tempDate.getFullYear() === yearNum &&
+        tempDate.getMonth() === (monthNum - 1) &&
+        tempDate.getDate() === dayNum
+      ) {
+        parsedDateOfBirth = tempDate;
+      }
+    }
+
+    onSubmit({
+      name,
+      dateOfBirth: parsedDateOfBirth,
+      gender,
+      contactNumber,
+      email,
+      address,
+      notes,
+    });
   };
 
   return (
@@ -47,29 +85,33 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
       <div>
-        <Label htmlFor="dateOfBirth">Date of Birth</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !dateOfBirth && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateOfBirth ? format(dateOfBirth, "PPP") : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={dateOfBirth}
-              onSelect={setDateOfBirth}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <Label>Date of Birth</Label>
+        <div className="flex space-x-2">
+          <Input
+            id="dob-day"
+            placeholder="DD"
+            value={day}
+            onChange={(e) => setDay(e.target.value.slice(0, 2))}
+            maxLength={2}
+            className="w-1/3"
+          />
+          <Input
+            id="dob-month"
+            placeholder="MM"
+            value={month}
+            onChange={(e) => setMonth(e.target.value.slice(0, 2))}
+            maxLength={2}
+            className="w-1/3"
+          />
+          <Input
+            id="dob-year"
+            placeholder="YYYY"
+            value={year}
+            onChange={(e) => setYear(e.target.value.slice(0, 4))}
+            maxLength={4}
+            className="w-1/3"
+          />
+        </div>
       </div>
       <div>
         <Label htmlFor="gender">Gender</Label>
