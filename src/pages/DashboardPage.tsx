@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Search, Download } from 'lucide-react'; // Import Download icon
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
 import PatientCategoryTabs from '@/components/PatientCategoryTabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Import table components
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Patient extends PatientFormData {
   id: string;
@@ -35,7 +35,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
       setPatients(JSON.parse(storedPatients).map((p: Patient) => ({
         ...p,
         dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
-        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined, // Parse dateOfVisit
+        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
       })));
     }
   }, []);
@@ -80,6 +80,29 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
     }
   };
 
+  const handleExportPatients = () => {
+    try {
+      const data = localStorage.getItem('patients');
+      if (data) {
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `patients_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showSuccess('Patient data exported successfully!');
+      } else {
+        showError('No patient data found to export.');
+      }
+    } catch (error) {
+      console.error('Failed to export patient data:', error);
+      showError('Failed to export patient data.');
+    }
+  };
+
   const filteredPatients = patients.filter(patient => {
     const matchesCategory = selectedCategory === 'All' || patient.lensCategory === selectedCategory;
     const matchesSearch = searchQuery.toLowerCase() === '' ||
@@ -102,19 +125,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
         <div className="md:w-3/4 lg:w-4/5">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Patient List ({selectedCategory})</h1>
-            <Dialog open={isNewPatientDialogOpen} onOpenChange={setIsNewPatientDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Patient
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add New Patient</DialogTitle>
-                </DialogHeader>
-                <PatientForm onSubmit={handleAddPatient} onCancel={() => setIsNewPatientDialogOpen(false)} />
-              </DialogContent>
-            </Dialog>
+            <div className="flex space-x-2"> {/* Group buttons */}
+              <Button onClick={handleExportPatients} variant="outline">
+                <Download className="mr-2 h-4 w-4" /> Export Data
+              </Button>
+              <Dialog open={isNewPatientDialogOpen} onOpenChange={setIsNewPatientDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Patient
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add New Patient</DialogTitle>
+                  </DialogHeader>
+                  <PatientForm onSubmit={handleAddPatient} onCancel={() => setIsNewPatientDialogOpen(false)} />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           {/* Search Bar */}
