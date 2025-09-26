@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import PatientDetailsPage from "./pages/PatientDetailsPage"; // Import the new page
 import React, { useState, useEffect } from "react";
 import Layout from "./components/Layout"; // Import Layout
 
@@ -52,7 +53,15 @@ const App = () => {
               path="/dashboard"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <DashboardPage onLogout={handleLogout} /> {/* Pass handleLogout here */}
+                  <DashboardPage onLogout={handleLogout} />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for patient details
+              path="/patients/:id"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <PatientDetailsPage />
                 </ProtectedRoute>
               }
             />
