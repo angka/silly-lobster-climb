@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { PlusCircle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
-import { showSuccess } from '@/utils/toast';
-import PatientCategoryTabs from '@/components/PatientCategoryTabs'; // Import the new component
+import { showSuccess, showError } from '@/utils/toast';
+import PatientCategoryTabs from '@/components/PatientCategoryTabs';
 
 interface Patient extends PatientFormData {
   id: string;
@@ -16,10 +17,13 @@ interface Patient extends PatientFormData {
 const DashboardPage: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<'All' | 'RGP' | 'Scleral lens'>('All'); // New state for category
+  const [selectedCategory, setSelectedCategory] = useState<'All' | 'RGP' | 'Scleral lens'>('All');
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Load patients from localStorage on component mount
     const storedPatients = localStorage.getItem('patients');
     if (storedPatients) {
       setPatients(JSON.parse(storedPatients).map((p: Patient) => ({
@@ -30,18 +34,43 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Save patients to localStorage whenever the patients state changes
     localStorage.setItem('patients', JSON.stringify(patients));
   }, [patients]);
 
   const handleAddPatient = (data: PatientFormData) => {
     const newPatient: Patient = {
-      id: `patient-${Date.now()}`, // Simple unique ID
+      id: `patient-${Date.now()}`,
       ...data,
     };
     setPatients((prevPatients) => [...prevPatients, newPatient]);
     setIsNewPatientDialogOpen(false);
     showSuccess('New patient added successfully!');
+  };
+
+  const handleEditPatient = (data: PatientFormData) => {
+    if (editingPatient) {
+      setPatients((prevPatients) =>
+        prevPatients.map((p) =>
+          p.id === editingPatient.id ? { ...p, ...data } : p
+        )
+      );
+      setIsEditDialogOpen(false);
+      setEditingPatient(null);
+      showSuccess('Patient information updated successfully!');
+    } else {
+      showError('Error: No patient selected for editing.');
+    }
+  };
+
+  const handleDeletePatient = () => {
+    if (patientToDelete) {
+      setPatients((prevPatients) =>
+        prevPatients.filter((p) => p.id !== patientToDelete.id)
+      );
+      setIsDeleteDialogOpen(false);
+      setPatientToDelete(null);
+      showSuccess('Patient deleted successfully!');
+    }
   };
 
   const filteredPatients = patients.filter(patient => {
@@ -53,7 +82,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Layout showLogout={true}>
-      <div className="flex flex-col md:flex-row gap-6"> {/* Flex container for sidebar and main content */}
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Left Panel for Tabs */}
         <div className="md:w-1/4 lg:w-1/5 p-4 bg-card rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Categories</h2>
@@ -93,10 +122,32 @@ const DashboardPage: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground">
-                        <p>Category: {patient.lensCategory || 'N/A'}</p> {/* Display category */}
-                        <p>DOB: {patient.dateOfBirth ? patient.dateOfBirth.toLocaleDateString() : 'N/A'}</p>
-                        <p>Gender: {patient.gender}</p>
-                        <p>Contact: {patient.contactNumber || 'N/A'}</p>
+                    <p>Category: {patient.lensCategory || 'N/A'}</p>
+                    <p>DOB: {patient.dateOfBirth ? patient.dateOfBirth.toLocaleDateString() : 'N/A'}</p>
+                    <p>Gender: {patient.gender}</p>
+                    <p>Contact: {patient.contactNumber || 'N/A'}</p>
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingPatient(patient);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setPatientToDelete(patient);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" /> Delete
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))
@@ -104,6 +155,45 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Patient Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Patient</DialogTitle>
+          </DialogHeader>
+          {editingPatient && (
+            <PatientForm
+              initialData={editingPatient}
+              onSubmit={handleEditPatient}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setEditingPatient(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Patient Alert Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the patient
+              <span className="font-bold"> {patientToDelete?.name} </span>
+              and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPatientToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePatient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
