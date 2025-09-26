@@ -38,9 +38,17 @@ const PatientDetailsPage: React.FC = () => {
   }, [id, navigate]);
 
   const handleSessionSelection = (sessionType: 'Fitting' | 'Follow-up') => {
-    showSuccess(`Starting ${sessionType} Session for ${patient?.name || 'patient'}.`);
-    // In a real application, you would navigate to a specific session form here.
-    // For example: navigate(`/patients/${id}/session/${sessionType.toLowerCase()}`);
+    if (!patient) {
+      showError('Patient data not loaded.');
+      return;
+    }
+    if (sessionType === 'Fitting') {
+      navigate(`/patients/${id}/fitting-session`);
+    } else {
+      showSuccess(`Starting ${sessionType} Session for ${patient?.name || 'patient'}.`);
+      // In a real application, you would navigate to a specific session form here.
+      // For example: navigate(`/patients/${id}/session/${sessionType.toLowerCase()}`);
+    }
   };
 
   if (!patient) {

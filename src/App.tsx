@@ -7,9 +7,10 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
-import PatientDetailsPage from "./pages/PatientDetailsPage"; // Import the new page
+import PatientDetailsPage from "./pages/PatientDetailsPage";
+import FittingSessionPage from "./pages/FittingSessionPage"; // Import the new FittingSessionPage
 import React, { useState, useEffect } from "react";
-import Layout from "./components/Layout"; // Import Layout
+import Layout from "./components/Layout";
 
 const queryClient = new QueryClient();
 
@@ -57,11 +58,19 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            <Route // New route for patient details
+            <Route
               path="/patients/:id"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <PatientDetailsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route // New route for fitting session
+              path="/patients/:id/fitting-session"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <FittingSessionPage />
                 </ProtectedRoute>
               }
             />
