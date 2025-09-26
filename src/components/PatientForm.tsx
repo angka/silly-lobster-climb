@@ -10,7 +10,7 @@ export interface PatientFormData {
   dateOfBirth: Date | undefined;
   gender: 'Male' | 'Female' | 'Other' | '';
   contactNumber: string;
-  email: string;
+  doctorName: string; // Changed from email to doctorName
   address: string;
   notes?: string;
 }
@@ -28,7 +28,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
   const [year, setYear] = useState('');
   const [gender, setGender] = useState<PatientFormData['gender']>(initialData?.gender || '');
   const [contactNumber, setContactNumber] = useState(initialData?.contactNumber || '');
-  const [email, setEmail] = useState(initialData?.email || '');
+  const [doctorName, setDoctorName] = useState(initialData?.doctorName || ''); // New state for doctor's name
   const [address, setAddress] = useState(initialData?.address || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
 
@@ -72,7 +72,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       dateOfBirth: parsedDateOfBirth,
       gender,
       contactNumber,
-      email,
+      doctorName, // Pass doctorName
       address,
       notes,
     });
@@ -131,8 +131,8 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
         <Input id="contactNumber" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
       </div>
       <div>
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Label htmlFor="doctorName">Doctor's Name</Label> {/* New field */}
+        <Input id="doctorName" value={doctorName} onChange={(e) => setDoctorName(e.target.value)} />
       </div>
       <div>
         <Label htmlFor="address">Address</Label>
