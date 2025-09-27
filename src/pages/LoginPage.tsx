@@ -26,6 +26,8 @@ const LoginPage: React.FC = () => {
     );
   }
 
+  console.log('Supabase client in LoginPage:', supabase); // Added console log here
+
   return (
     <Layout>
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">
