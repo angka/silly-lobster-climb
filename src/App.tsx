@@ -11,7 +11,8 @@ import PatientDetailsPage from "./pages/PatientDetailsPage";
 import FittingSessionPage from "./pages/FittingSessionPage";
 import React, { useEffect } from "react";
 import { SessionContextProvider, useSession } from "./components/SessionContextProvider"; // Import SessionContextProvider and useSession
-import AdminPage from "./pages/AdminPage"; // Import AdminPage
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import { showSuccess, showError } from '@/utils/toast'; // Import toast utilities
 
 const queryClient = new QueryClient();
 
@@ -41,20 +42,8 @@ const AppContent = () => {
   const { isAuthenticated, isLoading, session } = useSession();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      showError(error.message);
-    } else {
-      showSuccess('Logged out successfully!');
-      navigate('/login');
-    }
-  };
-
-  // Pass isAuthenticated and handleLogout to Layout
-  // The Layout component will need to be updated to accept these props
-  // For now, we'll pass them directly to DashboardPage and other protected routes
-  // and let Layout handle its own display logic based on session context if needed.
+  // The handleLogout function is now handled within the Layout component,
+  // so it's removed from AppContent.
 
   return (
     <Routes>
@@ -64,7 +53,7 @@ const AppContent = () => {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPage onLogout={handleLogout} />
+            <DashboardPage />
           </ProtectedRoute>
         }
       />
@@ -84,14 +73,7 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminPage onLogout={handleLogout} />
-          </ProtectedRoute>
-        }
-      />
+      {/* The /admin route has been removed */}
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
