@@ -253,16 +253,16 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
           <CardTitle className="text-2xl">FITTING PROCEDURE</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Fitting Procedure - Left Column (BC 6.9/7.0) */}
+          {/* Fitting Procedure - Left Column (OD) */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">OD</h3> {/* Changed to OD for clarity */}
+            <h3 className="text-lg font-semibold mb-4">OD</h3>
             <div className="space-y-3">
               <div>
                 <Label htmlFor="fp_bc_left_base_curve">BASE CURVE</Label>
                 <Input id="fp_bc_left_base_curve" value={formData.fp_bc_left_base_curve} onChange={handleChange} placeholder="e.g., 6.9 / 7.0" />
               </div>
               <div>
-                <Label htmlFor="fp_bc_left_central_fit_1mm">CENTRAL FIT (1mm)</Label>
+                <Label htmlFor="fp_bc_left_central_fit_1mm">CENTRAL FIT</Label>
                 <Input id="fp_bc_left_central_fit_1mm" value={formData.fp_bc_left_central_fit_1mm} onChange={handleChange} />
               </div>
               <div>
@@ -292,12 +292,12 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
             </div>
           </div>
 
-          {/* Fitting Procedure - Right Column (BC 6.3/6.5) */}
+          {/* Fitting Procedure - Right Column (OS) */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">OS</h3> {/* Changed to OS for clarity */}
+            <h3 className="text-lg font-semibold mb-4">OS</h3>
             <div className="space-y-3">
               <div>
-                <Label htmlFor="fp_bc_right_central_fit_1mm">CENTRAL FIT (1mm)</Label>
+                <Label htmlFor="fp_bc_right_central_fit_1mm">CENTRAL FIT</Label>
                 <Input id="fp_bc_right_central_fit_1mm" value={formData.fp_bc_right_central_fit_1mm} onChange={handleChange} />
               </div>
               <h4 className="font-medium mt-4">EDGE LIFT (NaFL)</h4>
