@@ -101,6 +101,10 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
   const [isOdRadiusAutoFilled, setIsOdRadiusAutoFilled] = useState(false);
   const [isOsRadiusAutoFilled, setIsOsRadiusAutoFilled] = useState(false);
 
+  // State for trial lens recommendations
+  const [odTrialLensRecommendation, setOdTrialLensRecommendation] = useState<string>('N/A');
+  const [osTrialLensRecommendation, setOsTrialLensRecommendation] = useState<string>('N/A');
+
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
@@ -116,6 +120,27 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     setIsOdRadiusAutoFilled(false);
     setIsOsRadiusAutoFilled(false);
   }, [patientName, medicalRecordNumber, initialData, diagnosis]);
+
+  // Helper function to calculate the first trial lens recommendation
+  const calculateFirstTrialLensRecommendation = (meanKRadius: string, patientDiagnosis?: string): string => {
+    const radius = parseFloat(meanKRadius);
+    if (isNaN(radius) || radius <= 0 || !patientDiagnosis) {
+      return 'N/A';
+    }
+
+    const lowerCaseDiagnosis = patientDiagnosis.toLowerCase();
+    let recommendedValue: number | null = null;
+
+    if (lowerCaseDiagnosis.includes('keratoconus')) {
+      recommendedValue = radius;
+    } else if (lowerCaseDiagnosis.includes('pmd') || lowerCaseDiagnosis.includes('keratoglobus')) {
+      recommendedValue = radius - 0.6;
+    } else if (lowerCaseDiagnosis.includes('post graft') || lowerCaseDiagnosis.includes('post lasik')) {
+      recommendedValue = radius - 0.7;
+    }
+
+    return recommendedValue !== null ? recommendedValue.toFixed(2) : 'N/A';
+  };
 
   // Effect for OD Mean K calculation
   useEffect(() => {
@@ -166,6 +191,15 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       });
     }
   }, [formData.os_mean_k_power, isOsRadiusAutoFilled]);
+
+  // Effect to update trial lens recommendations when radius or diagnosis changes
+  useEffect(() => {
+    setOdTrialLensRecommendation(calculateFirstTrialLensRecommendation(formData.od_mean_k_radius, diagnosis));
+  }, [formData.od_mean_k_radius, diagnosis]);
+
+  useEffect(() => {
+    setOsTrialLensRecommendation(calculateFirstTrialLensRecommendation(formData.os_mean_k_radius, diagnosis));
+  }, [formData.os_mean_k_radius, diagnosis]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -283,6 +317,11 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Label htmlFor="od_orbscan">ORBSCAN (Elevation map / CCT)</Label>
                 <Input id="od_orbscan" value={formData.od_orbscan} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
               </div>
+              {/* First Trial Lens Recommendation */}
+              <div>
+                <Label htmlFor="od_trial_lens_recommendation">First Trial Lens Recommendation</Label>
+                <Input id="od_trial_lens_recommendation" value={odTrialLensRecommendation} readOnly className="bg-muted" />
+              </div>
             </div>
           </div>
 
@@ -332,6 +371,11 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
               <div>
                 <Label htmlFor="os_orbscan">ORBSCAN (Elevation map / CCT)</Label>
                 <Input id="os_orbscan" value={formData.os_orbscan} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
+              </div>
+              {/* First Trial Lens Recommendation */}
+              <div>
+                <Label htmlFor="os_trial_lens_recommendation">First Trial Lens Recommendation</Label>
+                <Input id="os_trial_lens_recommendation" value={osTrialLensRecommendation} readOnly className="bg-muted" />
               </div>
             </div>
           </div>
