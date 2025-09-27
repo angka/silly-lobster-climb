@@ -15,6 +15,7 @@ export interface FittingSessionFormData {
   // Patient Info (for display, not direct input on this form)
   patientName: string;
   medicalRecordNumber: string;
+  date: Date; // New field for the session date
 
   // OD (Right Eye)
   od_ucva: string;
@@ -85,6 +86,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     initialData || {
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
+      date: new Date(), // Initialize date
       od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k: '', od_kmax: '',
       od_tbut_schirmer: '', od_pentacam_elevation_map: '', od_pentacam_cct: '',
       od_orbscan_elevation_map: '', od_orbscan_cct: '',
@@ -107,6 +109,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       ...prev,
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
+      date: initialData?.date || new Date(), // Ensure date is initialized
       ...initialData, // Apply initialData if provided
     }));
   }, [patientName, medicalRecordNumber, initialData]);
@@ -133,6 +136,33 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
           <p className="text-sm text-muted-foreground">Patient: {patientName} (MRN: {medicalRecordNumber})</p>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Date of Session */}
+          <div className="md:col-span-2">
+            <Label htmlFor="date">Date of Session</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.date}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, date: date || new Date() }))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* OD (Right Eye) Section */}
           <div>
             <h3 className="text-lg font-semibold mb-4">OD (Right Eye)</h3>

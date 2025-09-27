@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FittingSessionForm, { FittingSessionFormData } from '@/components/FittingSessionForm';
 import { showSuccess, showError } from '@/utils/toast';
@@ -10,14 +10,34 @@ interface Patient extends PatientFormData {
   id: string;
 }
 
+// Placeholder for FollowUpSessionFormData (not implemented yet)
+interface FollowUpSessionFormData {
+  notes: string;
+  // Add other follow-up specific fields here if needed
+}
+
+// Define a generic session interface
+interface Session {
+  id: string;
+  patientId: string;
+  type: 'Fitting' | 'Follow-up';
+  date: Date; // Date of the session
+  data: FittingSessionFormData | FollowUpSessionFormData;
+}
+
 const FittingSessionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
+
   const [patient, setPatient] = useState<Patient | null>(null);
   const [initialFittingData, setInitialFittingData] = useState<FittingSessionFormData | undefined>(undefined);
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
+    const storedSessions = localStorage.getItem('sessions');
+
     if (storedPatients) {
       const patients: Patient[] = JSON.parse(storedPatients).map((p: Patient) => ({
         ...p,
@@ -27,9 +47,20 @@ const FittingSessionPage: React.FC = () => {
       const foundPatient = patients.find(p => p.id === id);
       if (foundPatient) {
         setPatient(foundPatient);
-        // For now, we'll just load an empty form or a placeholder.
-        // In a real app, you'd load existing fitting session data if available.
-        // setInitialFittingData(loadFittingSessionData(id));
+
+        if (sessionId && storedSessions) {
+          const allSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
+            ...s,
+            date: new Date(s.date),
+          }));
+          const foundSession = allSessions.find(s => s.id === sessionId && s.patientId === id && s.type === 'Fitting');
+          if (foundSession) {
+            setInitialFittingData(foundSession.data as FittingSessionFormData);
+          } else {
+            showError('Fitting session data not found.');
+            // Optionally navigate back or clear sessionId
+          }
+        }
       } else {
         showError('Patient not found.');
         navigate('/dashboard');
@@ -38,14 +69,35 @@ const FittingSessionPage: React.FC = () => {
       showError('No patient data available.');
       navigate('/dashboard');
     }
-  }, [id, navigate]);
+  }, [id, navigate, sessionId]);
 
   const handleSaveFittingSession = (data: FittingSessionFormData) => {
-    // In a real application, you would save this data to a backend or more structured local storage.
-    // For now, we'll just show a success message and navigate back.
-    console.log('Saving Fitting Session Data:', data);
-    showSuccess(`Fitting session for ${data.patientName} saved successfully!`);
-    navigate(`/patients/${id}`); // Navigate back to patient details
+    const newSession: Session = {
+      id: sessionId || `session-${Date.now()}`, // Use existing ID if editing, otherwise generate new
+      patientId: id!,
+      type: 'Fitting',
+      date: data.date,
+      data: data,
+    };
+
+    const storedSessions = localStorage.getItem('sessions');
+    let existingSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
+      ...s,
+      date: new Date(s.date),
+    })) : [];
+
+    if (sessionId) {
+      // Update existing session
+      existingSessions = existingSessions.map(s => s.id === sessionId ? newSession : s);
+      showSuccess(`Fitting session for ${data.patientName} updated successfully!`);
+    } else {
+      // Add new session
+      existingSessions = [...existingSessions, newSession];
+      showSuccess(`New fitting session for ${data.patientName} added successfully!`);
+    }
+
+    localStorage.setItem('sessions', JSON.stringify(existingSessions));
+    navigate(`/patients/${id}`);
   };
 
   const handleCancel = () => {
