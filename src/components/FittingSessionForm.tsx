@@ -7,9 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, PlusCircle, MinusCircle } from 'lucide-react'; // Import PlusCircle and MinusCircle
+import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import FittingProcedurePanel from './FittingProcedurePanel';
+import { SingleFittingProcedureData } from './SingleFittingProcedureForm';
 
 // Define the structure for the fitting session data
 export interface FittingSessionFormData {
@@ -40,35 +42,9 @@ export interface FittingSessionFormData {
   os_pentacam: string; // Merged field
   os_orbscan: string; // Merged field
 
-  // Fitting Procedure - OD (Left Column)
-  fp_bc_left_base_curve: string[]; // Changed to array
-  fp_bc_left_central_fit_1mm: string;
-  fp_bc_left_nafl_superior: string;
-  fp_bc_left_nafl_inferior: string;
-  fp_bc_left_nafl_temporal: string;
-  fp_bc_left_nafl_nasal: string;
-  fp_bc_left_dia_location_movement: string;
-  fp_bc_left_oct: string;
-  fp_bc_left_terpasang: string;
-  fp_bc_left_over_refraction: string;
-  fp_bc_left_vdc: string;
-  fp_bc_left_custom: string;
-  fp_bc_left_r: string;
-
-  // Fitting Procedure - OS (Right Column)
-  fp_bc_right_base_curve: string[]; // Changed to array
-  fp_bc_right_central_fit_1mm: string;
-  fp_bc_right_nafl_superior: string;
-  fp_bc_right_nafl_inferior: string;
-  fp_bc_right_nafl_temporal: string;
-  fp_bc_right_nafl_nasal: string;
-  fp_bc_right_dia_location_movement: string;
-  fp_bc_right_oct: string;
-  fp_bc_right_terpasang: string;
-  fp_bc_right_over_refraction: string;
-  fp_bc_right_vdc: string;
-  fp_bc_right_custom: string;
-  fp_bc_right_r: string;
+  // Fitting Procedures (now arrays of objects)
+  odProcedures: SingleFittingProcedureData[];
+  osProcedures: SingleFittingProcedureData[];
 }
 
 interface FittingSessionFormProps {
@@ -95,22 +71,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '',
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
       os_tbut_schirmer: '', os_pentacam: '', os_orbscan: '',
-      fp_bc_left_base_curve: [''], // Initialize as array with one empty string
-      fp_bc_left_central_fit_1mm: '',
-      fp_bc_left_nafl_superior: '', fp_bc_left_nafl_inferior: '', fp_bc_left_nafl_temporal: '', fp_bc_left_nafl_nasal: '',
-      fp_bc_left_dia_location_movement: '',
-      fp_bc_left_oct: '',
-      fp_bc_left_terpasang: '',
-      fp_bc_left_over_refraction: '',
-      fp_bc_left_vdc: '',
-      fp_bc_left_custom: '',
-      fp_bc_left_r: '',
-      fp_bc_right_base_curve: [''], // Initialize as array with one empty string
-      fp_bc_right_central_fit_1mm: '', fp_bc_right_nafl_superior: '', fp_bc_right_nafl_inferior: '',
-      fp_bc_right_nafl_temporal: '', fp_bc_right_nafl_nasal: '',
-      fp_bc_right_dia_location_movement: '', fp_bc_right_oct: '',
-      fp_bc_right_terpasang: '', fp_bc_right_over_refraction: '',
-      fp_bc_right_vdc: '', fp_bc_right_custom: '', fp_bc_right_r: '',
+      odProcedures: [],
+      osProcedures: [],
     }
   );
 
@@ -121,13 +83,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       medicalRecordNumber: medicalRecordNumber,
       date: initialData?.date || new Date(),
       ...initialData,
-      // Ensure base curve fields are arrays, converting if necessary
-      fp_bc_left_base_curve: Array.isArray(initialData?.fp_bc_left_base_curve)
-        ? initialData.fp_bc_left_base_curve
-        : (initialData?.fp_bc_left_base_curve ? [initialData.fp_bc_left_base_curve] : ['']),
-      fp_bc_right_base_curve: Array.isArray(initialData?.fp_bc_right_base_curve)
-        ? initialData.fp_bc_right_base_curve
-        : (initialData?.fp_bc_right_base_curve ? [initialData.fp_bc_right_base_curve] : ['']),
+      odProcedures: initialData?.odProcedures || [],
+      osProcedures: initialData?.osProcedures || [],
     }));
   }, [patientName, medicalRecordNumber, initialData]);
 
@@ -136,30 +93,12 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleBaseCurveChange = (eye: 'left' | 'right', index: number, value: string) => {
-    setFormData((prev) => {
-      const key = `fp_bc_${eye}_base_curve` as keyof FittingSessionFormData;
-      const updatedBaseCurves = [...(prev[key] as string[])];
-      updatedBaseCurves[index] = value;
-      return { ...prev, [key]: updatedBaseCurves };
-    });
+  const handleUpdateODProcedures = (updatedProcedures: SingleFittingProcedureData[]) => {
+    setFormData(prev => ({ ...prev, odProcedures: updatedProcedures }));
   };
 
-  const handleAddBaseCurve = (eye: 'left' | 'right') => {
-    setFormData((prev) => {
-      const key = `fp_bc_${eye}_base_curve` as keyof FittingSessionFormData;
-      const updatedBaseCurves = [...(prev[key] as string[]), ''];
-      return { ...prev, [key]: updatedBaseCurves };
-    });
-  };
-
-  const handleRemoveBaseCurve = (eye: 'left' | 'right', index: number) => {
-    setFormData((prev) => {
-      const key = `fp_bc_${eye}_base_curve` as keyof FittingSessionFormData;
-      const updatedBaseCurves = (prev[key] as string[]).filter((_, i) => i !== index);
-      // Ensure there's always at least one input field
-      return { ...prev, [key]: updatedBaseCurves.length > 0 ? updatedBaseCurves : [''] };
-    });
+  const handleUpdateOSProcedures = (updatedProcedures: SingleFittingProcedureData[]) => {
+    setFormData(prev => ({ ...prev, osProcedures: updatedProcedures }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -296,170 +235,18 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Fitting Procedure - Left Column (OD) */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">OD</h3>
-            <div className="space-y-3">
-              <div>
-                <Label>BASE CURVE</Label>
-                {formData.fp_bc_left_base_curve.map((bc, index) => (
-                  <div key={index} className="flex items-center space-x-2 mb-2">
-                    <Input
-                      id={`fp_bc_left_base_curve_${index}`}
-                      value={bc}
-                      onChange={(e) => handleBaseCurveChange('left', index, e.target.value)}
-                      placeholder="e.g., 6.9 / 7.0"
-                    />
-                    {formData.fp_bc_left_base_curve.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleRemoveBaseCurve('left', index)}
-                      >
-                        <MinusCircle className="h-4 w-4" />
-                        <span className="sr-only">Remove Base Curve</span>
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => handleAddBaseCurve('left')} className="mt-2">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add another Base Curve
-                </Button>
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_central_fit_1mm">CENTRAL FIT</Label>
-                <Input id="fp_bc_left_central_fit_1mm" value={formData.fp_bc_left_central_fit_1mm} onChange={handleChange} />
-              </div>
-              <h4 className="font-medium mt-4">EDGE LIFT (NaFL)</h4>
-              <div>
-                <Label htmlFor="fp_bc_left_nafl_superior">Superior</Label>
-                <Input id="fp_bc_left_nafl_superior" value={formData.fp_bc_left_nafl_superior} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_nafl_inferior">Inferior</Label>
-                <Input id="fp_bc_left_nafl_inferior" value={formData.fp_bc_left_nafl_inferior} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_nafl_temporal">Temporal</Label>
-                <Input id="fp_bc_left_nafl_temporal" value={formData.fp_bc_left_nafl_temporal} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_nafl_nasal">Nasal</Label>
-                <Input id="fp_bc_left_nafl_nasal" value={formData.fp_bc_left_nafl_nasal} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_dia_location_movement">DIA/LOCATION/MOVEMENT</Label>
-                <Textarea id="fp_bc_left_dia_location_movement" value={formData.fp_bc_left_dia_location_movement} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_oct">OCT</Label>
-                <Input id="fp_bc_left_oct" value={formData.fp_bc_left_oct} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_terpasang">TERPASANG</Label>
-                <Input id="fp_bc_left_terpasang" value={formData.fp_bc_left_terpasang} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_over_refraction">OVER REFRACTION</Label>
-                <Input id="fp_bc_left_over_refraction" value={formData.fp_bc_left_over_refraction} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_vdc">VDC</Label>
-                <Input id="fp_bc_left_vdc" value={formData.fp_bc_left_vdc} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_custom">CUSTOM</Label>
-                <Input id="fp_bc_left_custom" value={formData.fp_bc_left_custom} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_r">R/</Label>
-                <Input id="fp_bc_left_r" value={formData.fp_bc_left_r} onChange={handleChange} />
-              </div>
-            </div>
-          </div>
+          <FittingProcedurePanel
+            eye="OD"
+            procedures={formData.odProcedures}
+            onUpdateProcedures={handleUpdateODProcedures}
+          />
 
           {/* Fitting Procedure - Right Column (OS) */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">OS</h3>
-            <div className="space-y-3">
-              <div>
-                <Label>BASE CURVE</Label>
-                {formData.fp_bc_right_base_curve.map((bc, index) => (
-                  <div key={index} className="flex items-center space-x-2 mb-2">
-                    <Input
-                      id={`fp_bc_right_base_curve_${index}`}
-                      value={bc}
-                      onChange={(e) => handleBaseCurveChange('right', index, e.target.value)}
-                      placeholder="e.g., 6.9 / 7.0"
-                    />
-                    {formData.fp_bc_right_base_curve.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleRemoveBaseCurve('right', index)}
-                      >
-                        <MinusCircle className="h-4 w-4" />
-                        <span className="sr-only">Remove Base Curve</span>
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => handleAddBaseCurve('right')} className="mt-2">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add another Base Curve
-                </Button>
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_central_fit_1mm">CENTRAL FIT</Label>
-                <Input id="fp_bc_right_central_fit_1mm" value={formData.fp_bc_right_central_fit_1mm} onChange={handleChange} />
-              </div>
-              <h4 className="font-medium mt-4">EDGE LIFT (NaFL)</h4>
-              <div>
-                <Label htmlFor="fp_bc_right_nafl_superior">Superior</Label>
-                <Input id="fp_bc_right_nafl_superior" value={formData.fp_bc_right_nafl_superior} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_nafl_inferior">Inferior</Label>
-                <Input id="fp_bc_right_nafl_inferior" value={formData.fp_bc_right_nafl_inferior} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_nafl_temporal">Temporal</Label>
-                <Input id="fp_bc_right_nafl_temporal" value={formData.fp_bc_right_nafl_temporal} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_nafl_nasal">Nasal</Label>
-                <Input id="fp_bc_right_nafl_nasal" value={formData.fp_bc_right_nafl_nasal} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_dia_location_movement">DIA/LOCATION/MOVEMENT</Label>
-                <Textarea id="fp_bc_right_dia_location_movement" value={formData.fp_bc_right_dia_location_movement} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_oct">OCT</Label>
-                <Input id="fp_bc_right_oct" value={formData.fp_bc_right_oct} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_terpasang">TERPASANG</Label>
-                <Input id="fp_bc_right_terpasang" value={formData.fp_bc_right_terpasang} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_over_refraction">OVER REFRACTION</Label>
-                <Input id="fp_bc_right_over_refraction" value={formData.fp_bc_right_over_refraction} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_vdc">VDC</Label>
-                <Input id="fp_bc_right_vdc" value={formData.fp_bc_right_vdc} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_custom">CUSTOM</Label>
-                <Input id="fp_bc_right_custom" value={formData.fp_bc_right_custom} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_right_r">R/</Label>
-                <Input id="fp_bc_right_r" value={formData.fp_bc_right_r} onChange={handleChange} />
-              </div>
-            </div>
-          </div>
+          <FittingProcedurePanel
+            eye="OS"
+            procedures={formData.osProcedures}
+            onUpdateProcedures={handleUpdateOSProcedures}
+          />
         </CardContent>
       </Card>
 

@@ -5,7 +5,7 @@ import FittingSessionForm, { FittingSessionFormData } from '@/components/Fitting
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button'; // Added missing import
+import { Button } from '@/components/ui/button';
 
 interface Patient extends PatientFormData {
   id: string;
