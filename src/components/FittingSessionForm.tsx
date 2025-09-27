@@ -45,7 +45,7 @@ export interface FittingSessionFormData {
   fp_bc_left_central_fit_1mm: string;
   fp_bc_left_edge_lift: string; // Merged NaFL fields
   fp_bc_left_dia_location_movement: string; // Renamed from description
-  fp_bc_left_clearance: string;
+  fp_bc_left_as_oct_result: string; // Renamed from clearance
   fp_bc_left_c_center: string; // Added based on image
 
   // Fitting Procedure - OS (Right Column)
@@ -90,7 +90,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       fp_bc_left_base_curve: '', // Initialize new field
       fp_bc_left_central_fit_1mm: '', fp_bc_left_edge_lift: '', // Initialize new merged field
       fp_bc_left_dia_location_movement: '', // Initialize new renamed field
-      fp_bc_left_clearance: '',
+      fp_bc_left_as_oct_result: '', // Initialize new renamed field
       fp_bc_left_c_center: '',
       fp_bc_right_central_fit_1mm: '', fp_bc_right_nafl_superior: '', fp_bc_right_nafl_inferior: '',
       fp_bc_right_nafl_temporal: '', fp_bc_right_nafl_nasal: '',
@@ -273,8 +273,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Textarea id="fp_bc_left_dia_location_movement" value={formData.fp_bc_left_dia_location_movement} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="fp_bc_left_clearance">Clearance</Label>
-                <Input id="fp_bc_left_clearance" value={formData.fp_bc_left_clearance} onChange={handleChange} />
+                <Label htmlFor="fp_bc_left_as_oct_result">AS OCT Result</Label>
+                <Input id="fp_bc_left_as_oct_result" value={formData.fp_bc_left_as_oct_result} onChange={handleChange} />
               </div>
               <div>
                 <Label htmlFor="fp_bc_left_c_center">C. Center</Label>
