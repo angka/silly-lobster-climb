@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Added CardDescription
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
@@ -16,6 +16,7 @@ export interface RGPFittingSessionFormData {
   medicalRecordNumber: string;
   date: Date;
   notes: string;
+  diagnosis?: string; // New field for diagnosis
   // Add more RGP specific fields here later
   od_k_reading: string;
   os_k_reading: string;
@@ -34,7 +35,8 @@ export interface RGPFittingSessionFormData {
 interface RGPFittingSessionFormProps {
   patientName: string;
   medicalRecordNumber: string;
-  dateOfBirth?: Date; // Added dateOfBirth prop
+  dateOfBirth?: Date;
+  diagnosis?: string; // Added diagnosis prop
   initialData?: RGPFittingSessionFormData;
   onSubmit: (data: RGPFittingSessionFormData) => void;
   onCancel: () => void;
@@ -56,7 +58,8 @@ const calculateAge = (dob?: Date): number | null => {
 const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
   patientName,
   medicalRecordNumber,
-  dateOfBirth, // Destructure dateOfBirth
+  dateOfBirth,
+  diagnosis, // Destructure diagnosis
   initialData,
   onSubmit,
   onCancel,
@@ -67,6 +70,7 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
       medicalRecordNumber: medicalRecordNumber,
       date: new Date(),
       notes: '',
+      diagnosis: diagnosis, // Initialize diagnosis
       od_k_reading: '',
       os_k_reading: '',
       od_hvid: '',
@@ -88,9 +92,10 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
       date: initialData?.date || new Date(),
+      diagnosis: diagnosis, // Update diagnosis if prop changes
       ...initialData,
     }));
-  }, [patientName, medicalRecordNumber, initialData]);
+  }, [patientName, medicalRecordNumber, initialData, diagnosis]); // Add diagnosis to dependencies
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -113,7 +118,10 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
             <span className="font-semibold">{patientName}</span>
             {patientAge !== null && <span className="ml-2 text-muted-foreground">({patientAge} years old)</span>}
           </div>
-          <CardDescription className="text-base">Medical Record Number: {medicalRecordNumber}</CardDescription>
+          <CardDescription className="text-base">
+            Medical Record Number: {medicalRecordNumber}
+            {diagnosis && <span className="ml-4">Diagnosis: {diagnosis}</span>}
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">

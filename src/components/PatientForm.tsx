@@ -20,7 +20,8 @@ export interface PatientFormData {
   lensCategory: 'RGP' | 'Scleral lens' | '';
   medicalRecordNumber: string;
   notes?: string;
-  dateOfVisit?: Date; // New field for date of visit
+  dateOfVisit?: Date;
+  diagnosis?: string; // New field for diagnosis
 }
 
 interface PatientFormProps {
@@ -41,7 +42,8 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
   const [lensCategory, setLensCategory] = useState<PatientFormData['lensCategory']>(initialData?.lensCategory || '');
   const [medicalRecordNumber, setMedicalRecordNumber] = useState(initialData?.medicalRecordNumber || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
-  const [dateOfVisit, setDateOfVisit] = useState<Date | undefined>(initialData?.dateOfVisit); // New state for date of visit
+  const [dateOfVisit, setDateOfVisit] = useState<Date | undefined>(initialData?.dateOfVisit);
+  const [diagnosis, setDiagnosis] = useState(initialData?.diagnosis || ''); // New state for diagnosis
 
   useEffect(() => {
     if (initialData?.dateOfBirth) {
@@ -58,6 +60,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
     }
     if (initialData?.dateOfVisit) {
       setDateOfVisit(initialData.dateOfVisit);
+    }
+    if (initialData?.diagnosis) {
+      setDiagnosis(initialData.diagnosis);
     }
   }, [initialData]);
 
@@ -97,7 +102,8 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       lensCategory,
       medicalRecordNumber,
       notes,
-      dateOfVisit, // Pass dateOfVisit
+      dateOfVisit,
+      diagnosis, // Pass diagnosis
     });
   };
 
@@ -110,6 +116,10 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       <div>
         <Label htmlFor="medicalRecordNumber">Medical Record Number</Label>
         <Input id="medicalRecordNumber" value={medicalRecordNumber} onChange={(e) => setMedicalRecordNumber(e.target.value)} required />
+      </div>
+      <div>
+        <Label htmlFor="diagnosis">Diagnosis</Label>
+        <Input id="diagnosis" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="e.g., Keratoconus, Myopia" />
       </div>
       <div>
         <Label>Date of Birth</Label>

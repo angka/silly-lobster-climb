@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Added CardDescription
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -19,6 +19,7 @@ export interface FittingSessionFormData {
   patientName: string;
   medicalRecordNumber: string;
   date: Date; // New field for the session date
+  diagnosis?: string; // New field for diagnosis
 
   // OD (Right Eye)
   od_ucva: string;
@@ -50,7 +51,8 @@ export interface FittingSessionFormData {
 interface FittingSessionFormProps {
   patientName: string;
   medicalRecordNumber: string;
-  dateOfBirth?: Date; // Added dateOfBirth prop
+  dateOfBirth?: Date;
+  diagnosis?: string; // Added diagnosis prop
   initialData?: FittingSessionFormData;
   onSubmit: (data: FittingSessionFormData) => void;
   onCancel: () => void;
@@ -72,7 +74,8 @@ const calculateAge = (dob?: Date): number | null => {
 const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
   patientName,
   medicalRecordNumber,
-  dateOfBirth, // Destructure dateOfBirth
+  dateOfBirth,
+  diagnosis, // Destructure diagnosis
   initialData,
   onSubmit,
   onCancel,
@@ -82,6 +85,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
       date: new Date(),
+      diagnosis: diagnosis, // Initialize diagnosis
       od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k: '', od_kmax: '',
       od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '',
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
@@ -97,11 +101,12 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
       date: initialData?.date || new Date(),
+      diagnosis: diagnosis, // Update diagnosis if prop changes
       ...initialData,
       odProcedures: initialData?.odProcedures || [],
       osProcedures: initialData?.osProcedures || [],
     }));
-  }, [patientName, medicalRecordNumber, initialData]);
+  }, [patientName, medicalRecordNumber, initialData, diagnosis]); // Add diagnosis to dependencies
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -132,7 +137,10 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
             <span className="font-semibold">{patientName}</span>
             {patientAge !== null && <span className="ml-2 text-muted-foreground">({patientAge} years old)</span>}
           </div>
-          <CardDescription className="text-base">Medical Record Number: {medicalRecordNumber}</CardDescription>
+          <CardDescription className="text-base">
+            Medical Record Number: {medicalRecordNumber}
+            {diagnosis && <span className="ml-4">Diagnosis: {diagnosis}</span>}
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Date of Session */}

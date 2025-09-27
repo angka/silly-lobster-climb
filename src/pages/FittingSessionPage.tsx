@@ -148,7 +148,8 @@ const FittingSessionPage: React.FC = () => {
           <FittingSessionForm
             patientName={patient.name}
             medicalRecordNumber={patient.medicalRecordNumber}
-            dateOfBirth={patient.dateOfBirth} // Pass dateOfBirth
+            dateOfBirth={patient.dateOfBirth}
+            diagnosis={patient.diagnosis} // Pass diagnosis
             initialData={initialFittingData as FittingSessionFormData}
             onSubmit={handleSaveFittingSession}
             onCancel={handleCancel}
@@ -157,7 +158,8 @@ const FittingSessionPage: React.FC = () => {
           <RGPFittingSessionForm
             patientName={patient.name}
             medicalRecordNumber={patient.medicalRecordNumber}
-            dateOfBirth={patient.dateOfBirth} // Pass dateOfBirth
+            dateOfBirth={patient.dateOfBirth}
+            diagnosis={patient.diagnosis} // Pass diagnosis
             initialData={initialFittingData as RGPFittingSessionFormData}
             onSubmit={handleSaveFittingSession}
             onCancel={handleCancel}

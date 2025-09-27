@@ -126,7 +126,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
       }
 
       const headers = [
-        'ID', 'Name', 'Medical Record Number', 'Date of Birth', 'Gender',
+        'ID', 'Name', 'Medical Record Number', 'Diagnosis', 'Date of Birth', 'Gender',
         'Contact Number', 'Doctor Name', 'Address', 'Lens Category', 'Notes', 'Date of Visit'
       ];
 
@@ -138,6 +138,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
           patient.id,
           `"${patient.name.replace(/"/g, '""')}"`, // Escape double quotes
           patient.medicalRecordNumber,
+          `"${(patient.diagnosis || '').replace(/"/g, '""')}"`, // New: Diagnosis
           patient.dateOfBirth ? patient.dateOfBirth.toISOString().split('T')[0] : '',
           patient.gender || '',
           patient.contactNumber || '',
@@ -238,6 +239,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               case 'ID': patientData.id = value; break;
               case 'Name': patientData.name = value; break;
               case 'MedicalRecordNumber': patientData.medicalRecordNumber = value; break;
+              case 'Diagnosis': patientData.diagnosis = value; break; // New: Diagnosis
               case 'DateofBirth': patientData.dateOfBirth = value ? new Date(value) : undefined; break;
               case 'Gender': patientData.gender = value as PatientFormData['gender']; break;
               case 'ContactNumber': patientData.contactNumber = value; break;
@@ -279,7 +281,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
     const matchesCategory = selectedCategory === 'All' || patient.lensCategory === selectedCategory;
     const matchesSearch = searchQuery.toLowerCase() === '' ||
                           patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          patient.medicalRecordNumber.toLowerCase().includes(searchQuery.toLowerCase());
+                          patient.medicalRecordNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (patient.diagnosis && patient.diagnosis.toLowerCase().includes(searchQuery.toLowerCase())); // Search by diagnosis
 
     return matchesCategory && matchesSearch;
   });
@@ -345,7 +348,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search patients by name or medical record number..."
+              placeholder="Search patients by name, MRN, or diagnosis..."
               className="pl-9 pr-4 py-2 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -358,6 +361,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>MRN</TableHead>
+                  <TableHead>Diagnosis</TableHead> {/* New column */}
                   <TableHead>Lens Category</TableHead>
                   <TableHead>Date of Visit</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -366,7 +370,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               <TableBody>
                 {filteredPatients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                       No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients found. {searchQuery && `for "${searchQuery}"`}
                     </TableCell>
                   </TableRow>
@@ -379,6 +383,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                         </Link>
                       </TableCell>
                       <TableCell>{patient.medicalRecordNumber}</TableCell>
+                      <TableCell>{patient.diagnosis || 'N/A'}</TableCell> {/* Display diagnosis */}
                       <TableCell>{patient.lensCategory || 'N/A'}</TableCell>
                       <TableCell>{patient.dateOfVisit ? patient.dateOfVisit.toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell className="text-right">

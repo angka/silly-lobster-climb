@@ -142,6 +142,10 @@ const PatientDetailsPage: React.FC = () => {
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <p className="text-sm font-medium text-muted-foreground">Diagnosis</p>
+                  <p className="text-base">{patient.diagnosis || 'N/A'}</p>
+                </div>
+                <div>
                   <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
                   <p className="text-base">{patient.dateOfBirth ? format(patient.dateOfBirth, 'PPP') : 'N/A'}</p>
                 </div>
