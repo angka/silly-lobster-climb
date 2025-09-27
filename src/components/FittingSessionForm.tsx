@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar'; // Added missing import
+import { Calendar } from '@/components/ui/calendar';
 
 // Define the structure for the fitting session data
 export interface FittingSessionFormData {
@@ -26,8 +26,7 @@ export interface FittingSessionFormData {
   od_mean_k: string;
   od_kmax: string;
   od_tbut_schirmer: string;
-  od_pentacam_elevation_map: string;
-  od_pentacam_cct: string;
+  od_pentacam: string; // Merged field
   od_orbscan_elevation_map: string;
   od_orbscan_cct: string;
 
@@ -39,8 +38,7 @@ export interface FittingSessionFormData {
   os_mean_k: string;
   os_kmax: string;
   os_tbut_schirmer: string;
-  os_pentacam_elevation_map: string;
-  os_pentacam_cct: string;
+  os_pentacam: string; // Merged field
   os_orbscan_elevation_map: string;
   os_orbscan_cct: string;
 
@@ -89,10 +87,10 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       medicalRecordNumber: medicalRecordNumber,
       date: new Date(), // Initialize date
       od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k: '', od_kmax: '',
-      od_tbut_schirmer: '', od_pentacam_elevation_map: '', od_pentacam_cct: '',
+      od_tbut_schirmer: '', od_pentacam: '', // Merged field
       od_orbscan_elevation_map: '', od_orbscan_cct: '',
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
-      os_tbut_schirmer: '', os_pentacam_elevation_map: '', os_pentacam_cct: '',
+      os_tbut_schirmer: '', os_pentacam: '', // Merged field
       os_orbscan_elevation_map: '', os_orbscan_cct: '',
       fp_bc_left_central_fit_1mm: '', fp_bc_left_nafl_1: '', fp_bc_left_nafl_2: '',
       fp_bc_left_nafl_3: '', fp_bc_left_description: '', fp_bc_left_clearance: '',
@@ -197,12 +195,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Input id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="od_pentacam_elevation_map">PENTACAM (Elevation map)</Label>
-                <Input id="od_pentacam_elevation_map" value={formData.od_pentacam_elevation_map} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="od_pentacam_cct">PENTACAM (CCT)</Label>
-                <Input id="od_pentacam_cct" value={formData.od_pentacam_cct} onChange={handleChange} />
+                <Label htmlFor="od_pentacam">PENTACAM (Elevation map / CCT)</Label>
+                <Input id="od_pentacam" value={formData.od_pentacam} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
               </div>
               <div>
                 <Label htmlFor="od_orbscan_elevation_map">ORBSCAN (Elevation map)</Label>
@@ -248,12 +242,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Input id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="os_pentacam_elevation_map">PENTACAM (Elevation map)</Label>
-                <Input id="os_pentacam_elevation_map" value={formData.os_pentacam_elevation_map} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="os_pentacam_cct">PENTACAM (CCT)</Label>
-                <Input id="os_pentacam_cct" value={formData.os_pentacam_cct} onChange={handleChange} />
+                <Label htmlFor="os_pentacam">PENTACAM (Elevation map / CCT)</Label>
+                <Input id="os_pentacam" value={formData.os_pentacam} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
               </div>
               <div>
                 <Label htmlFor="os_orbscan_elevation_map">ORBSCAN (Elevation map)</Label>
