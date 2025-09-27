@@ -110,6 +110,28 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     }));
   }, [patientName, medicalRecordNumber, initialData, diagnosis]); // Add diagnosis to dependencies
 
+  // Effect for OD Mean K calculation
+  useEffect(() => {
+    const power = parseFloat(formData.od_mean_k_power);
+    if (!isNaN(power) && power !== 0) {
+      const radius = (337.5 / power).toFixed(2); // Calculate and format to 2 decimal places
+      setFormData(prev => ({ ...prev, od_mean_k_radius: radius }));
+    } else if (formData.od_mean_k_power === '') {
+      setFormData(prev => ({ ...prev, od_mean_k_radius: '' }));
+    }
+  }, [formData.od_mean_k_power]);
+
+  // Effect for OS Mean K calculation
+  useEffect(() => {
+    const power = parseFloat(formData.os_mean_k_power);
+    if (!isNaN(power) && power !== 0) {
+      const radius = (337.5 / power).toFixed(2); // Calculate and format to 2 decimal places
+      setFormData(prev => ({ ...prev, os_mean_k_radius: radius }));
+    } else if (formData.os_mean_k_power === '') {
+      setFormData(prev => ({ ...prev, os_mean_k_radius: '' }));
+    }
+  }, [formData.os_mean_k_power]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
@@ -196,7 +218,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="od_mean_k_radius">MEAN K (Radius)</Label>
-                  <Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} />
+                  <Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} readOnly />
                 </div>
                 <div>
                   <Label htmlFor="od_mean_k_power">MEAN K (Power)</Label>
@@ -246,7 +268,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="os_mean_k_radius">MEAN K (Radius)</Label>
-                  <Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} />
+                  <Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} readOnly />
                 </div>
                 <div>
                   <Label htmlFor="os_mean_k_power">MEAN K (Power)</Label>
