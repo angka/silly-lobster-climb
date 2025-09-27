@@ -40,17 +40,15 @@ export interface FittingSessionFormData {
   os_pentacam: string; // Merged field
   os_orbscan: string; // Merged field
 
-  // Fitting Procedure - BC 6.9/7.0 (Left Column)
+  // Fitting Procedure - OD (Left Column)
   fp_bc_left_base_curve: string; // New field for Base Curve
   fp_bc_left_central_fit_1mm: string;
-  fp_bc_left_nafl_1: string;
-  fp_bc_left_nafl_2: string;
-  fp_bc_left_nafl_3: string;
+  fp_bc_left_edge_lift: string; // Merged NaFL fields
   fp_bc_left_description: string;
   fp_bc_left_clearance: string;
   fp_bc_left_c_center: string; // Added based on image
 
-  // Fitting Procedure - BC 6.3/6.5 (Right Column)
+  // Fitting Procedure - OS (Right Column)
   fp_bc_right_central_fit_1mm: string;
   fp_bc_right_nafl_superior: string;
   fp_bc_right_nafl_inferior: string;
@@ -90,8 +88,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
       os_tbut_schirmer: '', os_pentacam: '', os_orbscan: '', // Merged fields
       fp_bc_left_base_curve: '', // Initialize new field
-      fp_bc_left_central_fit_1mm: '', fp_bc_left_nafl_1: '', fp_bc_left_nafl_2: '',
-      fp_bc_left_nafl_3: '', fp_bc_left_description: '', fp_bc_left_clearance: '',
+      fp_bc_left_central_fit_1mm: '', fp_bc_left_edge_lift: '', // Initialize new merged field
+      fp_bc_left_description: '', fp_bc_left_clearance: '',
       fp_bc_left_c_center: '',
       fp_bc_right_central_fit_1mm: '', fp_bc_right_nafl_superior: '', fp_bc_right_nafl_inferior: '',
       fp_bc_right_nafl_temporal: '', fp_bc_right_nafl_nasal: '',
@@ -266,16 +264,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Input id="fp_bc_left_central_fit_1mm" value={formData.fp_bc_left_central_fit_1mm} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="fp_bc_left_nafl_1">NaFL 1</Label>
-                <Input id="fp_bc_left_nafl_1" value={formData.fp_bc_left_nafl_1} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_nafl_2">NaFL 2</Label>
-                <Input id="fp_bc_left_nafl_2" value={formData.fp_bc_left_nafl_2} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="fp_bc_left_nafl_3">NaFL 3</Label>
-                <Input id="fp_bc_left_nafl_3" value={formData.fp_bc_left_nafl_3} onChange={handleChange} />
+                <Label htmlFor="fp_bc_left_edge_lift">EDGE LIFT (NaFL)</Label>
+                <Textarea id="fp_bc_left_edge_lift" value={formData.fp_bc_left_edge_lift} onChange={handleChange} placeholder="Enter NaFL 1, NaFL 2, NaFL 3 details here" />
               </div>
               <div>
                 <Label htmlFor="fp_bc_left_description">Description</Label>
