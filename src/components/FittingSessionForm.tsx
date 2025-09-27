@@ -43,12 +43,17 @@ export interface FittingSessionFormData {
   // Fitting Procedure - OD (Left Column)
   fp_bc_left_base_curve: string; // New field for Base Curve
   fp_bc_left_central_fit_1mm: string;
-  fp_bc_left_edge_lift: string; // Merged NaFL fields
-  fp_bc_left_dia_location_movement: string; // Renamed from description
-  fp_bc_left_as_oct_result: string; // Renamed from clearance
-  fp_bc_left_over_refraction: string; // Renamed from C. Center
-  fp_bc_left_vdc: string; // New field for VDC
-  fp_bc_left_custom: string; // New field for Custom
+  fp_bc_left_nafl_superior: string; // New NaFL field
+  fp_bc_left_nafl_inferior: string; // New NaFL field
+  fp_bc_left_nafl_temporal: string; // New NaFL field
+  fp_bc_left_nafl_nasal: string; // New NaFL field
+  fp_bc_left_dia_location_movement: string;
+  fp_bc_left_oct: string; // Renamed from AS OCT Result
+  fp_bc_left_terpasang: string; // New field
+  fp_bc_left_over_refraction: string;
+  fp_bc_left_vdc: string;
+  fp_bc_left_custom: string;
+  fp_bc_left_r: string; // New field
 
   // Fitting Procedure - OS (Right Column)
   fp_bc_right_central_fit_1mm: string;
@@ -89,13 +94,16 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '', // Merged fields
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
       os_tbut_schirmer: '', os_pentacam: '', os_orbscan: '', // Merged fields
-      fp_bc_left_base_curve: '', // Initialize new field
-      fp_bc_left_central_fit_1mm: '', fp_bc_left_edge_lift: '', // Initialize new merged field
-      fp_bc_left_dia_location_movement: '', // Initialize new renamed field
-      fp_bc_left_as_oct_result: '', // Initialize new renamed field
-      fp_bc_left_over_refraction: '', // Initialize new renamed field
-      fp_bc_left_vdc: '', // Initialize new field
-      fp_bc_left_custom: '', // Initialize new field
+      fp_bc_left_base_curve: '',
+      fp_bc_left_central_fit_1mm: '',
+      fp_bc_left_nafl_superior: '', fp_bc_left_nafl_inferior: '', fp_bc_left_nafl_temporal: '', fp_bc_left_nafl_nasal: '',
+      fp_bc_left_dia_location_movement: '',
+      fp_bc_left_oct: '',
+      fp_bc_left_terpasang: '',
+      fp_bc_left_over_refraction: '',
+      fp_bc_left_vdc: '',
+      fp_bc_left_custom: '',
+      fp_bc_left_r: '',
       fp_bc_right_central_fit_1mm: '', fp_bc_right_nafl_superior: '', fp_bc_right_nafl_inferior: '',
       fp_bc_right_nafl_temporal: '', fp_bc_right_nafl_nasal: '',
       fp_bc_right_dia_location_movement: '', fp_bc_right_oct: '',
@@ -268,20 +276,37 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Label htmlFor="fp_bc_left_central_fit_1mm">CENTRAL FIT</Label>
                 <Input id="fp_bc_left_central_fit_1mm" value={formData.fp_bc_left_central_fit_1mm} onChange={handleChange} />
               </div>
+              <h4 className="font-medium mt-4">EDGE LIFT (NaFL)</h4>
               <div>
-                <Label htmlFor="fp_bc_left_edge_lift">EDGE LIFT (NaFL)</Label>
-                <Textarea id="fp_bc_left_edge_lift" value={formData.fp_bc_left_edge_lift} onChange={handleChange} placeholder="Enter NaFL 1, NaFL 2, NaFL 3 details here" />
+                <Label htmlFor="fp_bc_left_nafl_superior">Superior</Label>
+                <Input id="fp_bc_left_nafl_superior" value={formData.fp_bc_left_nafl_superior} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="fp_bc_left_dia_location_movement">Diameter/Location/Movement</Label>
+                <Label htmlFor="fp_bc_left_nafl_inferior">Inferior</Label>
+                <Input id="fp_bc_left_nafl_inferior" value={formData.fp_bc_left_nafl_inferior} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="fp_bc_left_nafl_temporal">Temporal</Label>
+                <Input id="fp_bc_left_nafl_temporal" value={formData.fp_bc_left_nafl_temporal} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="fp_bc_left_nafl_nasal">Nasal</Label>
+                <Input id="fp_bc_left_nafl_nasal" value={formData.fp_bc_left_nafl_nasal} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="fp_bc_left_dia_location_movement">DIA/LOCATION/MOVEMENT</Label>
                 <Textarea id="fp_bc_left_dia_location_movement" value={formData.fp_bc_left_dia_location_movement} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="fp_bc_left_as_oct_result">AS OCT Result</Label>
-                <Input id="fp_bc_left_as_oct_result" value={formData.fp_bc_left_as_oct_result} onChange={handleChange} />
+                <Label htmlFor="fp_bc_left_oct">OCT</Label>
+                <Input id="fp_bc_left_oct" value={formData.fp_bc_left_oct} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="fp_bc_left_over_refraction">Over Refraction</Label>
+                <Label htmlFor="fp_bc_left_terpasang">TERPASANG</Label>
+                <Input id="fp_bc_left_terpasang" value={formData.fp_bc_left_terpasang} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="fp_bc_left_over_refraction">OVER REFRACTION</Label>
                 <Input id="fp_bc_left_over_refraction" value={formData.fp_bc_left_over_refraction} onChange={handleChange} />
               </div>
               <div>
@@ -291,6 +316,10 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
               <div>
                 <Label htmlFor="fp_bc_left_custom">CUSTOM</Label>
                 <Input id="fp_bc_left_custom" value={formData.fp_bc_left_custom} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="fp_bc_left_r">R/</Label>
+                <Input id="fp_bc_left_r" value={formData.fp_bc_left_r} onChange={handleChange} />
               </div>
             </div>
           </div>
