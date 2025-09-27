@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout, showLogout = false 
     <div className="min-h-screen flex flex-col">
       <header className="bg-primary text-primary-foreground p-4 shadow-md flex justify-between items-center">
         <Link to="/dashboard" className="text-2xl font-bold">
-          RGP EMR App
+          EMR Contact Lens
         </Link>
         {showLogout && (
           <Button variant="ghost" size="icon" onClick={onLogout} className="text-primary-foreground hover:bg-primary-foreground/20">
