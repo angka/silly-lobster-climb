@@ -34,14 +34,29 @@ export interface RGPFittingSessionFormData {
 interface RGPFittingSessionFormProps {
   patientName: string;
   medicalRecordNumber: string;
+  dateOfBirth?: Date; // Added dateOfBirth prop
   initialData?: RGPFittingSessionFormData;
   onSubmit: (data: RGPFittingSessionFormData) => void;
   onCancel: () => void;
 }
 
+// Helper function to calculate age
+const calculateAge = (dob?: Date): number | null => {
+  if (!dob) return null;
+  const today = new Date();
+  const birthDate = new Date(dob);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
   patientName,
   medicalRecordNumber,
+  dateOfBirth, // Destructure dateOfBirth
   initialData,
   onSubmit,
   onCancel,
@@ -87,12 +102,18 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
     onSubmit(formData);
   };
 
+  const patientAge = calculateAge(dateOfBirth);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">RGP FITTING WORKSHEET</CardTitle>
-          <p className="text-sm text-muted-foreground">Patient: {patientName} (MRN: {medicalRecordNumber})</p>
+          <CardTitle className="text-3xl font-bold">RGP FITTING WORKSHEET</CardTitle>
+          <div className="text-lg text-foreground">
+            <span className="font-semibold">{patientName}</span>
+            {patientAge !== null && <span className="ml-2 text-muted-foreground">({patientAge} years old)</span>}
+          </div>
+          <CardDescription className="text-base">Medical Record Number: {medicalRecordNumber}</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
