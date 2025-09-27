@@ -3,19 +3,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button'; // Import Button for delete action
+import { Trash2 } from 'lucide-react'; // Import Trash2 icon
 
 export interface SingleFittingProcedureData {
+  id: string; // Added for unique identification in lists
   lens_name: string;
   base_curve: string;
   diameter: string;
   power: string;
   over_refraction: string;
   va: string;
+  central_fit_1mm: string; // Added
   nafl_superior: string;
   nafl_inferior: string;
   nafl_nasal: string;
   nafl_temporal: string;
   nafl_central: string;
+  dia_location_movement: string; // Added
+  oct: string; // Added
+  terpasang: string; // Added
+  vdc: string; // Added
+  custom: string; // Added
+  r: string; // Added
   overall_assessment: string;
   comments: string;
 }
@@ -23,23 +33,33 @@ export interface SingleFittingProcedureData {
 interface SingleFittingProcedureFormProps {
   eye: 'OD' | 'OS';
   data: SingleFittingProcedureData;
-  onChange: (field: keyof SingleFittingProcedureData, value: string) => void;
+  onChange: (updatedData: SingleFittingProcedureData) => void; // Changed to pass full object
+  onDelete: (id: string) => void; // Added onDelete prop
+  canDelete: boolean; // Added canDelete prop
 }
 
-const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({ eye, data, onChange }) => {
+const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({ eye, data, onChange, onDelete, canDelete }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     // Remove the eye prefix to get the actual field name
     const fieldName = id.replace(`${eye.toLowerCase()}_`, '') as keyof SingleFittingProcedureData;
-    onChange(fieldName, value);
+    onChange({ ...data, [fieldName]: value });
   };
 
   const handleSelectChange = (field: keyof SingleFittingProcedureData, value: string) => {
-    onChange(field, value);
+    onChange({ ...data, [field]: value });
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 p-4 border rounded-md bg-background">
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="text-lg font-semibold">Procedure Details</h4>
+        {canDelete && (
+          <Button variant="destructive" size="sm" onClick={() => onDelete(data.id)}>
+            <Trash2 className="h-4 w-4 mr-2" /> Delete
+          </Button>
+        )}
+      </div>
       <div>
         <Label htmlFor={`${eye.toLowerCase()}_lens_name`}>Lens Name</Label>
         <Input id={`${eye.toLowerCase()}_lens_name`} value={data.lens_name} onChange={handleChange} />
@@ -63,6 +83,36 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
       <div>
         <Label htmlFor={`${eye.toLowerCase()}_va`}>VA</Label>
         <Input id={`${eye.toLowerCase()}_va`} value={data.va} onChange={handleChange} />
+      </div>
+
+      <h4 className="text-md font-semibold mt-4">Fitting Assessment</h4>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_central_fit_1mm`}>Central Fit (1mm)</Label>
+        <Input id={`${eye.toLowerCase()}_central_fit_1mm`} value={data.central_fit_1mm} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_dia_location_movement`}>DIA / Location / Movement</Label>
+        <Input id={`${eye.toLowerCase()}_dia_location_movement`} value={data.dia_location_movement} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_oct`}>OCT</Label>
+        <Input id={`${eye.toLowerCase()}_oct`} value={data.oct} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_terpasang`}>Terpasang</Label>
+        <Input id={`${eye.toLowerCase()}_terpasang`} value={data.terpasang} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_vdc`}>VDC</Label>
+        <Input id={`${eye.toLowerCase()}_vdc`} value={data.vdc} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_custom`}>Custom</Label>
+        <Input id={`${eye.toLowerCase()}_custom`} value={data.custom} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_r`}>R</Label>
+        <Input id={`${eye.toLowerCase()}_r`} value={data.r} onChange={handleChange} />
       </div>
 
       <h4 className="text-md font-semibold mt-4">NAFL (Sodium Fluorescein)</h4>
