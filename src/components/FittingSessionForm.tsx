@@ -56,6 +56,7 @@ export interface FittingSessionFormData {
   fp_bc_left_r: string; // New field
 
   // Fitting Procedure - OS (Right Column)
+  fp_bc_right_base_curve: string; // New field for Base Curve
   fp_bc_right_central_fit_1mm: string;
   fp_bc_right_nafl_superior: string;
   fp_bc_right_nafl_inferior: string;
@@ -104,6 +105,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       fp_bc_left_vdc: '',
       fp_bc_left_custom: '',
       fp_bc_left_r: '',
+      fp_bc_right_base_curve: '', // Initialize new field
       fp_bc_right_central_fit_1mm: '', fp_bc_right_nafl_superior: '', fp_bc_right_nafl_inferior: '',
       fp_bc_right_nafl_temporal: '', fp_bc_right_nafl_nasal: '',
       fp_bc_right_dia_location_movement: '', fp_bc_right_oct: '',
@@ -328,6 +330,10 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
           <div>
             <h3 className="text-lg font-semibold mb-4">OS</h3>
             <div className="space-y-3">
+              <div>
+                <Label htmlFor="fp_bc_right_base_curve">BASE CURVE</Label>
+                <Input id="fp_bc_right_base_curve" value={formData.fp_bc_right_base_curve} onChange={handleChange} placeholder="e.g., 6.9 / 7.0" />
+              </div>
               <div>
                 <Label htmlFor="fp_bc_right_central_fit_1mm">CENTRAL FIT</Label>
                 <Input id="fp_bc_right_central_fit_1mm" value={formData.fp_bc_right_central_fit_1mm} onChange={handleChange} />
