@@ -102,107 +102,115 @@ const PatientDetailsPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-6xl mx-auto p-4">
         <Button variant="outline" onClick={() => navigate('/dashboard')} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient List
         </Button>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold">{patient.name}</CardTitle>
-            <CardDescription>Medical Record Number: {patient.medicalRecordNumber}</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
-              <p className="text-base">{patient.dateOfBirth ? format(patient.dateOfBirth, 'PPP') : 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Gender</p>
-              <p className="text-base">{patient.gender || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
-              <p className="text-base">{patient.contactNumber || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Doctor's Name</p>
-              <p className="text-base">{patient.doctorName || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Address</p>
-              <p className="text-base">{patient.address || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Lens Category</p>
-              <p className="text-base">{patient.lensCategory || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Last Visit</p>
-              <p className="text-base">{patient.dateOfVisit ? format(patient.dateOfVisit, 'PPP') : 'N/A'}</p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-sm font-medium text-muted-foreground">Notes</p>
-              <p className="text-base whitespace-pre-wrap">{patient.notes || 'No notes.'}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column: Patient Details and Session History */}
+          <div className="md:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-3xl font-bold">{patient.name}</CardTitle>
+                <CardDescription>Medical Record Number: {patient.medicalRecordNumber}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
+                  <p className="text-base">{patient.dateOfBirth ? format(patient.dateOfBirth, 'PPP') : 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Gender</p>
+                  <p className="text-base">{patient.gender || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
+                  <p className="text-base">{patient.contactNumber || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Doctor's Name</p>
+                  <p className="text-base">{patient.doctorName || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Address</p>
+                  <p className="text-base">{patient.address || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Lens Category</p>
+                  <p className="text-base">{patient.lensCategory || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Last Visit</p>
+                  <p className="text-base">{patient.dateOfVisit ? format(patient.dateOfVisit, 'PPP') : 'N/A'}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm font-medium text-muted-foreground">Notes</p>
+                  <p className="text-base whitespace-pre-wrap">{patient.notes || 'No notes.'}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Session History</CardTitle>
-            <CardDescription>Past fitting and follow-up sessions for this patient.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {sessions.length === 0 ? (
-              <p className="text-muted-foreground">No sessions recorded for this patient yet.</p>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sessions.map((session) => (
-                      <TableRow key={session.id}>
-                        <TableCell>{format(session.date, 'PPP')}</TableCell>
-                        <TableCell>{session.type}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewSessionDetails(session.id, session.type)}
-                          >
-                            View Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Session History</CardTitle>
+                <CardDescription>Past fitting and follow-up sessions for this patient.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {sessions.length === 0 ? (
+                  <p className="text-muted-foreground">No sessions recorded for this patient yet.</p>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sessions.map((session) => (
+                          <TableRow key={session.id}>
+                            <TableCell>{format(session.date, 'PPP')}</TableCell>
+                            <TableCell>{session.type}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewSessionDetails(session.id, session.type)}
+                              >
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Start New Session</CardTitle>
-            <CardDescription>Choose the type of session for this patient.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row gap-4">
-            <Button className="flex-1" onClick={() => handleSessionSelection('Fitting')}>
-              Start Fitting Session
-            </Button>
-            <Button className="flex-1" variant="secondary" onClick={() => handleSessionSelection('Follow-up')}>
-              Start Follow-up Session
-            </Button>
-          </CardContent>
-        </Card>
+          {/* Right Column: Start New Session */}
+          <div className="md:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Start New Session</CardTitle>
+                <CardDescription>Choose the type of session for this patient.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <Button className="flex-1" onClick={() => handleSessionSelection('Fitting')}>
+                  Start Fitting Session
+                </Button>
+                <Button className="flex-1" variant="secondary" onClick={() => handleSessionSelection('Follow-up')}>
+                  Start Follow-up Session
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </Layout>
   );
