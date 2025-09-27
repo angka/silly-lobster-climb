@@ -19,6 +19,18 @@ interface DashboardPageProps {
   onLogout: () => void;
 }
 
+// Helper function to parse a single CSV row, handling quoted fields
+const parseCsvRow = (row: string): string[] => {
+  const regex = /(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^,]*))(?:,|$)/g;
+  const matches = Array.from(row.matchAll(regex));
+  return matches.map(match => {
+    if (match[1] !== undefined) {
+      return match[1].replace(/""/g, '"'); // Quoted field, unescape "" to "
+    }
+    return match[2] || ''; // Unquoted field or empty
+  });
+};
+
 const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
@@ -29,7 +41,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputJsonRef = useRef<HTMLInputElement>(null); // For JSON import
+  const fileInputCsvRef = useRef<HTMLInputElement>(null); // For CSV import
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -154,7 +167,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
     }
   };
 
-  const handleImportPatients = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportJson = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -184,6 +197,79 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
       } catch (error) {
         console.error('Failed to import patient data:', error);
         showError('Failed to import patient data. Please ensure it is a valid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportCsv = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const lines = content.split(/\r?\n/).filter(line => line.trim() !== ''); // Split by newline and filter empty lines
+
+        if (lines.length < 1) {
+          showError('CSV file is empty or invalid.');
+          return;
+        }
+
+        const headers = parseCsvRow(lines[0]).map(h => h.trim().replace(/\s/g, '')); // Parse header row and normalize
+        const importedPatients: Patient[] = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCsvRow(lines[i]);
+          if (values.length !== headers.length) {
+            console.warn(`Skipping row ${i + 1} due to header/value mismatch.`);
+            continue; // Skip malformed rows
+          }
+
+          const patientData: Partial<Patient> = {};
+          headers.forEach((header, index) => {
+            const value = values[index].trim();
+
+            // Map CSV headers to PatientFormData keys
+            switch (header) {
+              case 'ID': patientData.id = value; break;
+              case 'Name': patientData.name = value; break;
+              case 'MedicalRecordNumber': patientData.medicalRecordNumber = value; break;
+              case 'DateofBirth': patientData.dateOfBirth = value ? new Date(value) : undefined; break;
+              case 'Gender': patientData.gender = value as PatientFormData['gender']; break;
+              case 'ContactNumber': patientData.contactNumber = value; break;
+              case 'DoctorName': patientData.doctorName = value; break;
+              case 'Address': patientData.address = value; break;
+              case 'LensCategory': patientData.lensCategory = value as PatientFormData['lensCategory']; break;
+              case 'Notes': patientData.notes = value; break;
+              case 'DateofVisit': patientData.dateOfVisit = value ? new Date(value) : undefined; break;
+              default:
+                // Ignore unknown headers
+                break;
+            }
+          });
+
+          // Basic validation for required fields
+          if (patientData.id && patientData.name && patientData.medicalRecordNumber) {
+            importedPatients.push(patientData as Patient);
+          } else {
+            console.warn(`Skipping patient due to missing required fields in row ${i + 1}: ${JSON.stringify(patientData)}`);
+          }
+        }
+
+        if (importedPatients.length === 0 && lines.length > 1) {
+          showError('No valid patient data found in the CSV file after parsing.');
+          return;
+        }
+
+        setPatients(importedPatients);
+        showSuccess('Patient data imported from CSV successfully!');
+      } catch (error) {
+        console.error('Failed to import patient data from CSV:', error);
+        showError('Failed to import patient data from CSV. Please ensure it is a valid CSV file.');
       }
     };
     reader.readAsText(file);
@@ -221,12 +307,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               <Input
                 type="file"
                 accept=".json"
-                ref={fileInputRef}
-                onChange={handleImportPatients}
+                ref={fileInputJsonRef}
+                onChange={handleImportJson}
                 className="hidden"
               />
-              <Button onClick={() => fileInputRef.current?.click()} variant="outline">
-                <Upload className="mr-2 h-4 w-4" /> Import Data
+              <Button onClick={() => fileInputJsonRef.current?.click()} variant="outline">
+                <Upload className="mr-2 h-4 w-4" /> Import JSON
+              </Button>
+              <Input
+                type="file"
+                accept=".csv"
+                ref={fileInputCsvRef}
+                onChange={handleImportCsv}
+                className="hidden"
+              />
+              <Button onClick={() => fileInputCsvRef.current?.click()} variant="outline">
+                <Upload className="mr-2 h-4 w-4" /> Import CSV
               </Button>
               <Dialog open={isNewPatientDialogOpen} onOpenChange={setIsNewPatientDialogOpen}>
                 <DialogTrigger asChild>
