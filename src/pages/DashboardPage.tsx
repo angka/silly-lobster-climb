@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react'; // Import useRef
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search, Download, Upload } from 'lucide-react'; // Import Upload icon
+import { PlusCircle, Edit, Trash2, Search, Download, Upload } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -29,7 +29,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -210,6 +210,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>MRN</TableHead>
+                  <TableHead>Lens Category</TableHead> {/* New TableHead */}
                   <TableHead>Date of Visit</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -217,7 +218,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               <TableBody>
                 {filteredPatients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground"> {/* Adjusted colSpan */}
                       No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients found. {searchQuery && `for "${searchQuery}"`}
                     </TableCell>
                   </TableRow>
@@ -230,6 +231,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                         </Link>
                       </TableCell>
                       <TableCell>{patient.medicalRecordNumber}</TableCell>
+                      <TableCell>{patient.lensCategory || 'N/A'}</TableCell> {/* New TableCell */}
                       <TableCell>{patient.dateOfVisit ? patient.dateOfVisit.toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
