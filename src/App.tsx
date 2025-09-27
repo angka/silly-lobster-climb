@@ -10,41 +10,24 @@ import DashboardPage from "./pages/DashboardPage";
 import PatientDetailsPage from "./pages/PatientDetailsPage";
 import FittingSessionPage from "./pages/FittingSessionPage";
 import React, { useEffect } from "react";
-import { SessionContextProvider, useSession } from "./components/SessionContextProvider"; // Import SessionContextProvider and useSession
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
-import { showSuccess, showError } from '@/utils/toast'; // Import toast utilities
 
 const queryClient = new QueryClient();
 
-// A simple wrapper for protected routes
+// A simple wrapper for protected routes using local storage
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useSession();
   const navigate = useNavigate();
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoggedIn) {
       navigate('/login');
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isLoggedIn, navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-xl text-gray-600">Loading authentication...</p>
-      </div>
-    );
-  }
-
-  return isAuthenticated ? <>{children}</> : null;
+  return isLoggedIn ? <>{children}</> : null;
 };
 
 const AppContent = () => {
-  const { isAuthenticated, isLoading, session } = useSession();
-  const navigate = useNavigate();
-
-  // The handleLogout function is now handled within the Layout component,
-  // so it's removed from AppContent.
-
   return (
     <Routes>
       <Route path="/" element={<Index />} />
@@ -73,7 +56,6 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      {/* The /admin route has been removed */}
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -87,9 +69,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SessionContextProvider>
-            <AppContent />
-          </SessionContextProvider>
+          <AppContent />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

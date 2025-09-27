@@ -1,20 +1,16 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSession } from '@/components/SessionContextProvider'; // Import useSession
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useSession();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        navigate('/dashboard');
-      } else {
-        navigate('/login');
-      }
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
