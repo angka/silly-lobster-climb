@@ -95,13 +95,62 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showSuccess('Patient data exported successfully!');
+        showSuccess('Patient data exported to JSON successfully!');
       } else {
         showError('No patient data found to export.');
       }
     } catch (error) {
       console.error('Failed to export patient data:', error);
       showError('Failed to export patient data.');
+    }
+  };
+
+  const handleExportCsv = () => {
+    try {
+      if (patients.length === 0) {
+        showError('No patient data found to export to CSV.');
+        return;
+      }
+
+      const headers = [
+        'ID', 'Name', 'Medical Record Number', 'Date of Birth', 'Gender',
+        'Contact Number', 'Doctor Name', 'Address', 'Lens Category', 'Notes', 'Date of Visit'
+      ];
+
+      const csvRows = [];
+      csvRows.push(headers.join(',')); // Add headers
+
+      for (const patient of patients) {
+        const values = [
+          patient.id,
+          `"${patient.name.replace(/"/g, '""')}"`, // Escape double quotes
+          patient.medicalRecordNumber,
+          patient.dateOfBirth ? patient.dateOfBirth.toISOString().split('T')[0] : '',
+          patient.gender || '',
+          patient.contactNumber || '',
+          `"${patient.doctorName.replace(/"/g, '""')}"`,
+          `"${patient.address.replace(/"/g, '""')}"`,
+          patient.lensCategory || '',
+          `"${(patient.notes || '').replace(/"/g, '""')}"`,
+          patient.dateOfVisit ? patient.dateOfVisit.toISOString().split('T')[0] : '',
+        ];
+        csvRows.push(values.join(','));
+      }
+
+      const csvString = csvRows.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `patients_backup_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showSuccess('Patient data exported to CSV successfully!');
+    } catch (error) {
+      console.error('Failed to export patient data to CSV:', error);
+      showError('Failed to export patient data to CSV.');
     }
   };
 
@@ -164,7 +213,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
             <h1 className="text-3xl font-bold">Patient List ({selectedCategory})</h1>
             <div className="flex space-x-2"> {/* Group buttons */}
               <Button onClick={handleExportPatients} variant="outline">
-                <Download className="mr-2 h-4 w-4" /> Export Data
+                <Download className="mr-2 h-4 w-4" /> Export JSON
+              </Button>
+              <Button onClick={handleExportCsv} variant="outline">
+                <Download className="mr-2 h-4 w-4" /> Export CSV
               </Button>
               <Input
                 type="file"
@@ -210,7 +262,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>MRN</TableHead>
-                  <TableHead>Lens Category</TableHead> {/* New TableHead */}
+                  <TableHead>Lens Category</TableHead>
                   <TableHead>Date of Visit</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -218,7 +270,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
               <TableBody>
                 {filteredPatients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground"> {/* Adjusted colSpan */}
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients found. {searchQuery && `for "${searchQuery}"`}
                     </TableCell>
                   </TableRow>
@@ -231,7 +283,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
                         </Link>
                       </TableCell>
                       <TableCell>{patient.medicalRecordNumber}</TableCell>
-                      <TableCell>{patient.lensCategory || 'N/A'}</TableCell> {/* New TableCell */}
+                      <TableCell>{patient.lensCategory || 'N/A'}</TableCell>
                       <TableCell>{patient.dateOfVisit ? patient.dateOfVisit.toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
