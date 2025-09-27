@@ -27,8 +27,7 @@ export interface FittingSessionFormData {
   od_kmax: string;
   od_tbut_schirmer: string;
   od_pentacam: string; // Merged field
-  od_orbscan_elevation_map: string;
-  od_orbscan_cct: string;
+  od_orbscan: string; // Merged field
 
   // OS (Left Eye)
   os_ucva: string;
@@ -39,8 +38,7 @@ export interface FittingSessionFormData {
   os_kmax: string;
   os_tbut_schirmer: string;
   os_pentacam: string; // Merged field
-  os_orbscan_elevation_map: string;
-  os_orbscan_cct: string;
+  os_orbscan: string; // Merged field
 
   // Fitting Procedure - BC 6.9/7.0 (Left Column)
   fp_bc_left_central_fit_1mm: string;
@@ -87,11 +85,9 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       medicalRecordNumber: medicalRecordNumber,
       date: new Date(), // Initialize date
       od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k: '', od_kmax: '',
-      od_tbut_schirmer: '', od_pentacam: '', // Merged field
-      od_orbscan_elevation_map: '', od_orbscan_cct: '',
+      od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '', // Merged fields
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
-      os_tbut_schirmer: '', os_pentacam: '', // Merged field
-      os_orbscan_elevation_map: '', os_orbscan_cct: '',
+      os_tbut_schirmer: '', os_pentacam: '', os_orbscan: '', // Merged fields
       fp_bc_left_central_fit_1mm: '', fp_bc_left_nafl_1: '', fp_bc_left_nafl_2: '',
       fp_bc_left_nafl_3: '', fp_bc_left_description: '', fp_bc_left_clearance: '',
       fp_bc_left_c_center: '',
@@ -199,12 +195,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Input id="od_pentacam" value={formData.od_pentacam} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
               </div>
               <div>
-                <Label htmlFor="od_orbscan_elevation_map">ORBSCAN (Elevation map)</Label>
-                <Input id="od_orbscan_elevation_map" value={formData.od_orbscan_elevation_map} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="od_orbscan_cct">ORBSCAN (CCT)</Label>
-                <Input id="od_orbscan_cct" value={formData.od_orbscan_cct} onChange={handleChange} />
+                <Label htmlFor="od_orbscan">ORBSCAN (Elevation map / CCT)</Label>
+                <Input id="od_orbscan" value={formData.od_orbscan} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
               </div>
             </div>
           </div>
@@ -246,12 +238,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Input id="os_pentacam" value={formData.os_pentacam} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
               </div>
               <div>
-                <Label htmlFor="os_orbscan_elevation_map">ORBSCAN (Elevation map)</Label>
-                <Input id="os_orbscan_elevation_map" value={formData.os_orbscan_elevation_map} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="os_orbscan_cct">ORBSCAN (CCT)</Label>
-                <Input id="os_orbscan_cct" value={formData.os_orbscan_cct} onChange={handleChange} />
+                <Label htmlFor="os_orbscan">ORBSCAN (Elevation map / CCT)</Label>
+                <Input id="os_orbscan" value={formData.os_orbscan} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
               </div>
             </div>
           </div>
