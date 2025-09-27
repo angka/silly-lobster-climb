@@ -5,7 +5,7 @@ import FittingSessionForm, { FittingSessionFormData } from '@/components/Fitting
 import RGPFittingSessionForm, { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm'; // Import RGP form
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react'; // Import Printer icon
 import { Button } from '@/components/ui/button';
 
 interface Patient extends PatientFormData {
@@ -111,6 +111,10 @@ const FittingSessionPage: React.FC = () => {
     navigate(`/patients/${id}`);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (!patient) {
     return (
       <Layout>
@@ -132,9 +136,14 @@ const FittingSessionPage: React.FC = () => {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-4">
-        <Button variant="outline" onClick={() => navigate(`/patients/${id}`)} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient Details
-        </Button>
+        <div className="flex justify-between items-center mb-6 print:hidden"> {/* Hide buttons on print */}
+          <Button variant="outline" onClick={() => navigate(`/patients/${id}`)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient Details
+          </Button>
+          <Button onClick={handlePrint}>
+            <Printer className="mr-2 h-4 w-4" /> Print Session
+          </Button>
+        </div>
         {lensType === 'ROSE_K2_XL' ? (
           <FittingSessionForm
             patientName={patient.name}
