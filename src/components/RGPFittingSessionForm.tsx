@@ -25,6 +25,8 @@ export interface RGPFittingSessionFormData {
   od_k1: string;
   od_k2: string;
   od_tbut_schirmer: string;
+  od_wfdt: string; // New field
+  od_stereoscopy: string; // New field
 
   // OS (Left Eye)
   os_ucva: string;
@@ -32,6 +34,8 @@ export interface RGPFittingSessionFormData {
   os_k1: string;
   os_k2: string;
   os_tbut_schirmer: string;
+  os_wfdt: string; // New field
+  os_stereoscopy: string; // New field
 
   // Fitting Procedures
   odProcedures: SingleFittingProcedureData[];
@@ -77,8 +81,8 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
       date: new Date(),
       diagnosis: diagnosis,
       // RGP fields
-      od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_tbut_schirmer: '',
-      os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_tbut_schirmer: '',
+      od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_tbut_schirmer: '', od_wfdt: '', od_stereoscopy: '',
+      os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_tbut_schirmer: '', os_wfdt: '', os_stereoscopy: '',
       odProcedures: [],
       osProcedures: [],
     }
@@ -182,6 +186,14 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
                 <Label htmlFor="od_tbut_schirmer">TBUT/SCHIRMER</Label>
                 <Input id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} />
               </div>
+              <div>
+                <Label htmlFor="od_wfdt">WFDT</Label>
+                <Input id="od_wfdt" value={formData.od_wfdt} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="od_stereoscopy">Stereoscopy</Label>
+                <Input id="od_stereoscopy" value={formData.od_stereoscopy} onChange={handleChange} />
+              </div>
             </div>
           </div>
 
@@ -208,6 +220,14 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
               <div>
                 <Label htmlFor="os_tbut_schirmer">TBUT/SCHIRMER</Label>
                 <Input id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="os_wfdt">WFDT</Label>
+                <Input id="os_wfdt" value={formData.os_wfdt} onChange={handleChange} />
+              </div>
+              <div>
+                <Label htmlFor="os_stereoscopy">Stereoscopy</Label>
+                <Input id="os_stereoscopy" value={formData.os_stereoscopy} onChange={handleChange} />
               </div>
             </div>
           </div>
