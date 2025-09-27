@@ -46,7 +46,7 @@ export interface FittingSessionFormData {
   fp_bc_left_edge_lift: string; // Merged NaFL fields
   fp_bc_left_dia_location_movement: string; // Renamed from description
   fp_bc_left_as_oct_result: string; // Renamed from clearance
-  fp_bc_left_c_center: string; // Added based on image
+  fp_bc_left_over_refraction: string; // Renamed from C. Center
 
   // Fitting Procedure - OS (Right Column)
   fp_bc_right_central_fit_1mm: string;
@@ -91,7 +91,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       fp_bc_left_central_fit_1mm: '', fp_bc_left_edge_lift: '', // Initialize new merged field
       fp_bc_left_dia_location_movement: '', // Initialize new renamed field
       fp_bc_left_as_oct_result: '', // Initialize new renamed field
-      fp_bc_left_c_center: '',
+      fp_bc_left_over_refraction: '', // Initialize new renamed field
       fp_bc_right_central_fit_1mm: '', fp_bc_right_nafl_superior: '', fp_bc_right_nafl_inferior: '',
       fp_bc_right_nafl_temporal: '', fp_bc_right_nafl_nasal: '',
       fp_bc_right_dia_location_movement: '', fp_bc_right_oct: '',
@@ -277,8 +277,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Input id="fp_bc_left_as_oct_result" value={formData.fp_bc_left_as_oct_result} onChange={handleChange} />
               </div>
               <div>
-                <Label htmlFor="fp_bc_left_c_center">C. Center</Label>
-                <Input id="fp_bc_left_c_center" value={formData.fp_bc_left_c_center} onChange={handleChange} />
+                <Label htmlFor="fp_bc_left_over_refraction">Over Refraction</Label>
+                <Input id="fp_bc_left_over_refraction" value={formData.fp_bc_left_over_refraction} onChange={handleChange} />
               </div>
             </div>
           </div>
