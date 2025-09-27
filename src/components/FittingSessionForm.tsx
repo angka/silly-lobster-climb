@@ -130,16 +130,20 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
 
     const lowerCaseDiagnosis = patientDiagnosis.toLowerCase();
     let recommendedValue: number | null = null;
+    let recommendationDetail: string = '';
 
     if (lowerCaseDiagnosis.includes('keratoconus')) {
       recommendedValue = radius;
+      recommendationDetail = `Mean K Radius: ${radius.toFixed(2)}`;
     } else if (lowerCaseDiagnosis.includes('pmd') || lowerCaseDiagnosis.includes('keratoglobus')) {
       recommendedValue = radius - 0.6;
+      recommendationDetail = `Mean K Radius - 0.6 = ${recommendedValue.toFixed(2)}`;
     } else if (lowerCaseDiagnosis.includes('post graft') || lowerCaseDiagnosis.includes('post lasik')) {
       recommendedValue = radius - 0.7;
+      recommendationDetail = `Mean K Radius - 0.7 = ${recommendedValue.toFixed(2)}`;
     }
 
-    return recommendedValue !== null ? recommendedValue.toFixed(2) : 'N/A';
+    return recommendedValue !== null ? recommendationDetail : 'N/A';
   };
 
   // Effect for OD Mean K calculation
