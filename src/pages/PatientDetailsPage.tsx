@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react'; // Import Trash2 icon
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { FittingSessionFormData } from '@/components/FittingSessionForm'; // Import for type checking
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'; // Import AlertDialog components
 
 interface Patient extends PatientFormData {
   id: string;
@@ -34,6 +35,8 @@ const PatientDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]); // New state for sessions
+  const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null); // State for session to delete
+  const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false); // State for delete dialog
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -75,7 +78,7 @@ const PatientDetailsPage: React.FC = () => {
     if (sessionType === 'Fitting') {
       navigate(`/patients/${id}/fitting-session`);
     } else {
-      showSuccess(`Starting ${sessionType} Session for ${patient?.name || 'patient'}.`);
+      showError('Follow-up session is not yet implemented.');
       // In a real application, you would navigate to a specific session form here.
       // For example: navigate(`/patients/${id}/session/${sessionType.toLowerCase()}`);
     }
@@ -87,6 +90,23 @@ const PatientDetailsPage: React.FC = () => {
     } else {
       showError('Viewing follow-up session details is not yet implemented.');
       // Implement navigation to follow-up details page later
+    }
+  };
+
+  const handleDeleteSession = () => {
+    if (sessionToDelete) {
+      const storedSessions = localStorage.getItem('sessions');
+      let existingSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
+        ...s,
+        date: new Date(s.date),
+      })) : [];
+
+      const updatedSessions = existingSessions.filter(s => s.id !== sessionToDelete.id);
+      localStorage.setItem('sessions', JSON.stringify(updatedSessions));
+      setSessions(prev => prev.filter(s => s.id !== sessionToDelete.id)); // Update local state
+      setIsSessionDeleteDialogOpen(false);
+      setSessionToDelete(null);
+      showSuccess(`Session from ${format(sessionToDelete.date, 'PPP')} deleted successfully!`);
     }
   };
 
@@ -175,13 +195,26 @@ const PatientDetailsPage: React.FC = () => {
                             <TableCell>{format(session.date, 'PPP')}</TableCell>
                             <TableCell>{session.type}</TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewSessionDetails(session.id, session.type)}
-                              >
-                                View Details
-                              </Button>
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewSessionDetails(session.id, session.type)}
+                                >
+                                  View Details
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSessionToDelete(session);
+                                    setIsSessionDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete session from {format(session.date, 'PPP')}</span>
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -212,6 +245,26 @@ const PatientDetailsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Session Alert Dialog */}
+      <AlertDialog open={isSessionDeleteDialogOpen} onOpenChange={setIsSessionDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the{' '}
+              <span className="font-bold">{sessionToDelete?.type} session from {sessionToDelete?.date ? format(sessionToDelete.date, 'PPP') : 'this date'}</span>
+              and remove its data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSessionToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSession} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
