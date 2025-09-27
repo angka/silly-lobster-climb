@@ -97,6 +97,10 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     }
   );
 
+  // State to track if radius was auto-filled or manually set
+  const [isOdRadiusAutoFilled, setIsOdRadiusAutoFilled] = useState(false);
+  const [isOsRadiusAutoFilled, setIsOsRadiusAutoFilled] = useState(false);
+
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
@@ -108,33 +112,71 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       odProcedures: initialData?.odProcedures || [],
       osProcedures: initialData?.osProcedures || [],
     }));
-  }, [patientName, medicalRecordNumber, initialData, diagnosis]); // Add diagnosis to dependencies
+    // Reset auto-filled flags when initialData changes
+    setIsOdRadiusAutoFilled(false);
+    setIsOsRadiusAutoFilled(false);
+  }, [patientName, medicalRecordNumber, initialData, diagnosis]);
 
   // Effect for OD Mean K calculation
   useEffect(() => {
     const power = parseFloat(formData.od_mean_k_power);
     if (!isNaN(power) && power !== 0) {
-      const radius = (337.5 / power).toFixed(2); // Calculate and format to 2 decimal places
-      setFormData(prev => ({ ...prev, od_mean_k_radius: radius }));
+      const calculatedRadius = (337.5 / power).toFixed(2);
+      setFormData(prev => {
+        // Only update if radius is empty or was previously auto-filled
+        if (prev.od_mean_k_radius === '' || isOdRadiusAutoFilled) {
+          setIsOdRadiusAutoFilled(true);
+          return { ...prev, od_mean_k_radius: calculatedRadius };
+        }
+        return prev; // Don't overwrite manual input
+      });
     } else if (formData.od_mean_k_power === '') {
-      setFormData(prev => ({ ...prev, od_mean_k_radius: '' }));
+      setFormData(prev => {
+        // If power is cleared, clear radius only if it was auto-filled
+        if (isOdRadiusAutoFilled) {
+          setIsOdRadiusAutoFilled(false);
+          return { ...prev, od_mean_k_radius: '' };
+        }
+        return prev; // Don't clear manual input
+      });
     }
-  }, [formData.od_mean_k_power]);
+  }, [formData.od_mean_k_power, isOdRadiusAutoFilled]);
 
   // Effect for OS Mean K calculation
   useEffect(() => {
     const power = parseFloat(formData.os_mean_k_power);
     if (!isNaN(power) && power !== 0) {
-      const radius = (337.5 / power).toFixed(2); // Calculate and format to 2 decimal places
-      setFormData(prev => ({ ...prev, os_mean_k_radius: radius }));
+      const calculatedRadius = (337.5 / power).toFixed(2);
+      setFormData(prev => {
+        // Only update if radius is empty or was previously auto-filled
+        if (prev.os_mean_k_radius === '' || isOsRadiusAutoFilled) {
+          setIsOsRadiusAutoFilled(true);
+          return { ...prev, os_mean_k_radius: calculatedRadius };
+        }
+        return prev; // Don't overwrite manual input
+      });
     } else if (formData.os_mean_k_power === '') {
-      setFormData(prev => ({ ...prev, os_mean_k_radius: '' }));
+      setFormData(prev => {
+        // If power is cleared, clear radius only if it was auto-filled
+        if (isOsRadiusAutoFilled) {
+          setIsOsRadiusAutoFilled(false);
+          return { ...prev, os_mean_k_radius: '' };
+        }
+        return prev; // Don't clear manual input
+      });
     }
-  }, [formData.os_mean_k_power]);
+  }, [formData.os_mean_k_power, isOsRadiusAutoFilled]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+
+    // If user manually types into a radius field, mark it as not auto-filled
+    if (id === 'od_mean_k_radius') {
+      setIsOdRadiusAutoFilled(false);
+    } else if (id === 'os_mean_k_radius') {
+      setIsOsRadiusAutoFilled(false);
+    }
   };
 
   const handleUpdateODProcedures = (updatedProcedures: SingleFittingProcedureData[]) => {
@@ -218,7 +260,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="od_mean_k_radius">MEAN K (Radius)</Label>
-                  <Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} readOnly />
+                  <Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} />
                 </div>
                 <div>
                   <Label htmlFor="od_mean_k_power">MEAN K (Power)</Label>
@@ -268,7 +310,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="os_mean_k_radius">MEAN K (Radius)</Label>
-                  <Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} readOnly />
+                  <Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} />
                 </div>
                 <div>
                   <Label htmlFor="os_mean_k_power">MEAN K (Power)</Label>
