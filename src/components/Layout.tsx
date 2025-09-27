@@ -2,22 +2,37 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { useSession } from './SessionContextProvider'; // Import useSession
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import { showSuccess, showError } from '@/utils/toast';
+import { useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
   children: React.ReactNode;
-  onLogout?: () => void;
-  showLogout?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onLogout, showLogout = false }) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { isAuthenticated } = useSession();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      showError(error.message);
+    } else {
+      showSuccess('Logged out successfully!');
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-primary text-primary-foreground p-4 shadow-md flex justify-between items-center">
         <Link to="/dashboard" className="text-2xl font-bold">
           EMR Contact Lens
         </Link>
-        {showLogout && (
-          <Button variant="ghost" size="icon" onClick={onLogout} className="text-primary-foreground hover:bg-primary-foreground/20">
+        {isAuthenticated && ( // Show logout button only if authenticated
+          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-primary-foreground hover:bg-primary-foreground/20">
             <LogOut className="h-5 w-5" />
             <span className="sr-only">Logout</span>
           </Button>

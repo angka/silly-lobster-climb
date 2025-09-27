@@ -15,10 +15,6 @@ interface Patient extends PatientFormData {
   id: string;
 }
 
-interface DashboardPageProps {
-  onLogout: () => void;
-}
-
 // Helper function to parse a single CSV row, handling quoted fields
 const parseCsvRow = (row: string): string[] => {
   const regex = /(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^,]*))(?:,|$)/g;
@@ -31,7 +27,7 @@ const parseCsvRow = (row: string): string[] => {
   });
 };
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
+const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogout
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'RGP' | 'Scleral lens'>('All');
@@ -288,7 +284,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout }) => {
   });
 
   return (
-    <Layout showLogout={true} onLogout={onLogout}>
+    <Layout> {/* Removed showLogout and onLogout props */}
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left Panel for Tabs */}
         <div className="md:w-1/4 lg:w-1/5 p-4 bg-card rounded-lg shadow-sm">
