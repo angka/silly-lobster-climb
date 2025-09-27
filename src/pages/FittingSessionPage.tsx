@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FittingSessionForm, { FittingSessionFormData } from '@/components/FittingSessionForm';
+import RGPFittingSessionForm, { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm'; // Import RGP form
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
 import { ArrowLeft } from 'lucide-react';
@@ -11,7 +12,6 @@ interface Patient extends PatientFormData {
   id: string;
 }
 
-// Placeholder for FollowUpSessionFormData (not implemented yet)
 interface FollowUpSessionFormData {
   notes: string;
   // Add other follow-up specific fields here if needed
@@ -22,8 +22,9 @@ interface Session {
   id: string;
   patientId: string;
   type: 'Fitting' | 'Follow-up';
+  lensType?: 'ROSE_K2_XL' | 'RGP'; // Add lensType to session
   date: Date; // Date of the session
-  data: FittingSessionFormData | FollowUpSessionFormData;
+  data: FittingSessionFormData | RGPFittingSessionFormData | FollowUpSessionFormData;
 }
 
 const FittingSessionPage: React.FC = () => {
@@ -31,9 +32,10 @@ const FittingSessionPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
+  const lensType = searchParams.get('lensType') as 'ROSE_K2_XL' | 'RGP' | null; // Get lensType from URL
 
   const [patient, setPatient] = useState<Patient | null>(null);
-  const [initialFittingData, setInitialFittingData] = useState<FittingSessionFormData | undefined>(undefined);
+  const [initialFittingData, setInitialFittingData] = useState<FittingSessionFormData | RGPFittingSessionFormData | undefined>(undefined);
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -56,7 +58,7 @@ const FittingSessionPage: React.FC = () => {
           }));
           const foundSession = allSessions.find(s => s.id === sessionId && s.patientId === id && s.type === 'Fitting');
           if (foundSession) {
-            setInitialFittingData(foundSession.data as FittingSessionFormData);
+            setInitialFittingData(foundSession.data as FittingSessionFormData | RGPFittingSessionFormData);
           } else {
             showError('Fitting session data not found.');
             // Optionally navigate back or clear sessionId
@@ -70,13 +72,19 @@ const FittingSessionPage: React.FC = () => {
       showError('No patient data available.');
       navigate('/dashboard');
     }
-  }, [id, navigate, sessionId]);
+  }, [id, navigate, sessionId, lensType]); // Add lensType to dependencies
 
-  const handleSaveFittingSession = (data: FittingSessionFormData) => {
+  const handleSaveFittingSession = (data: FittingSessionFormData | RGPFittingSessionFormData) => {
+    if (!lensType) {
+      showError('Lens type not specified for this session.');
+      return;
+    }
+
     const newSession: Session = {
-      id: sessionId || `session-${Date.now()}`, // Use existing ID if editing, otherwise generate new
+      id: sessionId || `session-${Date.now()}`,
       patientId: id!,
       type: 'Fitting',
+      lensType: lensType, // Save the selected lens type
       date: data.date,
       data: data,
     };
@@ -88,11 +96,9 @@ const FittingSessionPage: React.FC = () => {
     })) : [];
 
     if (sessionId) {
-      // Update existing session
       existingSessions = existingSessions.map(s => s.id === sessionId ? newSession : s);
       showSuccess(`Fitting session for ${data.patientName} updated successfully!`);
     } else {
-      // Add new session
       existingSessions = [...existingSessions, newSession];
       showSuccess(`New fitting session for ${data.patientName} added successfully!`);
     }
@@ -102,7 +108,7 @@ const FittingSessionPage: React.FC = () => {
   };
 
   const handleCancel = () => {
-    navigate(`/patients/${id}`); // Navigate back to patient details
+    navigate(`/patients/${id}`);
   };
 
   if (!patient) {
@@ -115,19 +121,39 @@ const FittingSessionPage: React.FC = () => {
     );
   }
 
+  if (!lensType && !sessionId) {
+    // If no lensType is specified and not editing an existing session, redirect to patient details
+    // to force selection or prevent direct access.
+    showError('Please select a lens type to start a new fitting session.');
+    navigate(`/patients/${id}`);
+    return null;
+  }
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-4">
         <Button variant="outline" onClick={() => navigate(`/patients/${id}`)} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient Details
         </Button>
-        <FittingSessionForm
-          patientName={patient.name}
-          medicalRecordNumber={patient.medicalRecordNumber}
-          initialData={initialFittingData}
-          onSubmit={handleSaveFittingSession}
-          onCancel={handleCancel}
-        />
+        {lensType === 'ROSE_K2_XL' ? (
+          <FittingSessionForm
+            patientName={patient.name}
+            medicalRecordNumber={patient.medicalRecordNumber}
+            initialData={initialFittingData as FittingSessionFormData}
+            onSubmit={handleSaveFittingSession}
+            onCancel={handleCancel}
+          />
+        ) : lensType === 'RGP' ? (
+          <RGPFittingSessionForm
+            patientName={patient.name}
+            medicalRecordNumber={patient.medicalRecordNumber}
+            initialData={initialFittingData as RGPFittingSessionFormData}
+            onSubmit={handleSaveFittingSession}
+            onCancel={handleCancel}
+          />
+        ) : (
+          <p className="text-xl text-gray-600">Invalid lens type selected or session type not recognized.</p>
+        )}
       </div>
     </Layout>
   );

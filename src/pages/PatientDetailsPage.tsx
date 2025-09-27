@@ -5,38 +5,40 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
-import { ArrowLeft, Trash2 } from 'lucide-react'; // Import Trash2 icon
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { FittingSessionFormData } from '@/components/FittingSessionForm'; // Import for type checking
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'; // Import AlertDialog components
+import { FittingSessionFormData } from '@/components/FittingSessionForm';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog'; // Import Dialog components
 
 interface Patient extends PatientFormData {
   id: string;
 }
 
-// Placeholder for FollowUpSessionFormData (not implemented yet)
 interface FollowUpSessionFormData {
   notes: string;
   // Add other follow-up specific fields here if needed
 }
 
-// Define a generic session interface (same as in FittingSessionPage.tsx)
+// Define a generic session interface
 interface Session {
   id: string;
   patientId: string;
   type: 'Fitting' | 'Follow-up';
-  date: Date; // Date of the session
-  data: FittingSessionFormData | FollowUpSessionFormData;
+  lensType?: 'ROSE_K2_XL' | 'RGP'; // Add lensType to session
+  date: Date;
+  data: FittingSessionFormData | FollowUpSessionFormData | any; // 'any' for RGP until its form is fully defined
 }
 
 const PatientDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [patient, setPatient] = useState<Patient | null>(null);
-  const [sessions, setSessions] = useState<Session[]>([]); // New state for sessions
-  const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null); // State for session to delete
-  const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false); // State for delete dialog
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
+  const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false);
+  const [isLensTypeSelectionOpen, setIsLensTypeSelectionOpen] = useState(false); // New state for lens type selection dialog
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -66,30 +68,33 @@ const PatientDetailsPage: React.FC = () => {
         date: new Date(s.date),
       }));
       const patientSessions = allSessions.filter(s => s.patientId === id);
-      setSessions(patientSessions.sort((a, b) => b.date.getTime() - a.date.getTime())); // Sort by date, newest first
+      setSessions(patientSessions.sort((a, b) => b.date.getTime() - a.date.getTime()));
     }
   }, [id, navigate]);
 
-  const handleSessionSelection = (sessionType: 'Fitting' | 'Follow-up') => {
+  const handleStartFittingSession = () => {
+    setIsLensTypeSelectionOpen(true);
+  };
+
+  const handleSelectLensType = (lensType: 'ROSE_K2_XL' | 'RGP') => {
+    setIsLensTypeSelectionOpen(false);
     if (!patient) {
       showError('Patient data not loaded.');
       return;
     }
-    if (sessionType === 'Fitting') {
-      navigate(`/patients/${id}/fitting-session`);
-    } else {
-      showError('Follow-up session is not yet implemented.');
-      // In a real application, you would navigate to a specific session form here.
-      // For example: navigate(`/patients/${id}/session/${sessionType.toLowerCase()}`);
-    }
+    navigate(`/patients/${id}/fitting-session?lensType=${lensType}`);
   };
 
-  const handleViewSessionDetails = (sessionId: string, sessionType: 'Fitting' | 'Follow-up') => {
+  const handleStartFollowUpSession = () => {
+    showError('Follow-up session is not yet implemented.');
+    // In a real application, you would navigate to a specific session form here.
+  };
+
+  const handleViewSessionDetails = (sessionId: string, sessionType: 'Fitting' | 'Follow-up', lensType?: 'ROSE_K2_XL' | 'RGP') => {
     if (sessionType === 'Fitting') {
-      navigate(`/patients/${patient?.id}/fitting-session?sessionId=${sessionId}`);
+      navigate(`/patients/${patient?.id}/fitting-session?sessionId=${sessionId}${lensType ? `&lensType=${lensType}` : ''}`);
     } else {
       showError('Viewing follow-up session details is not yet implemented.');
-      // Implement navigation to follow-up details page later
     }
   };
 
@@ -103,7 +108,7 @@ const PatientDetailsPage: React.FC = () => {
 
       const updatedSessions = existingSessions.filter(s => s.id !== sessionToDelete.id);
       localStorage.setItem('sessions', JSON.stringify(updatedSessions));
-      setSessions(prev => prev.filter(s => s.id !== sessionToDelete.id)); // Update local state
+      setSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
       setIsSessionDeleteDialogOpen(false);
       setSessionToDelete(null);
       showSuccess(`Session from ${format(sessionToDelete.date, 'PPP')} deleted successfully!`);
@@ -186,6 +191,7 @@ const PatientDetailsPage: React.FC = () => {
                         <TableRow>
                           <TableHead>Date</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Lens Type</TableHead> {/* New column */}
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -194,12 +200,13 @@ const PatientDetailsPage: React.FC = () => {
                           <TableRow key={session.id}>
                             <TableCell>{format(session.date, 'PPP')}</TableCell>
                             <TableCell>{session.type}</TableCell>
+                            <TableCell>{session.lensType || 'N/A'}</TableCell> {/* Display lens type */}
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleViewSessionDetails(session.id, session.type)}
+                                  onClick={() => handleViewSessionDetails(session.id, session.type, session.lensType)}
                                 >
                                   View Details
                                 </Button>
@@ -234,10 +241,10 @@ const PatientDetailsPage: React.FC = () => {
                 <CardDescription>Choose the type of session for this patient.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <Button className="flex-1" onClick={() => handleSessionSelection('Fitting')}>
+                <Button className="flex-1" onClick={handleStartFittingSession}>
                   Start Fitting Session
                 </Button>
-                <Button className="flex-1" variant="secondary" onClick={() => handleSessionSelection('Follow-up')}>
+                <Button className="flex-1" variant="secondary" onClick={handleStartFollowUpSession}>
                   Start Follow-up Session
                 </Button>
               </CardContent>
@@ -265,6 +272,33 @@ const PatientDetailsPage: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Lens Type Selection Dialog */}
+      <Dialog open={isLensTypeSelectionOpen} onOpenChange={setIsLensTypeSelectionOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Select Lens Type</DialogTitle>
+            <DialogDescription>
+              Choose the type of lens for this fitting session.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button onClick={() => handleSelectLensType('ROSE_K2_XL')}>
+              ROSE K2 XL
+            </Button>
+            <Button variant="secondary" onClick={() => handleSelectLensType('RGP')}>
+              RGP
+            </Button>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
