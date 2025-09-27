@@ -151,7 +151,17 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       };
     }
 
-    const keratoconusValue = radius.toFixed(2);
+    let keratoconusValue: string;
+    if (radius === 7.4) {
+      keratoconusValue = radius.toFixed(2);
+    } else if (radius < 7.4) {
+      const x = (7.4 - radius) / 2;
+      keratoconusValue = (radius + x).toFixed(2);
+    } else { // radius > 7.4
+      const y = (radius - 7.4) / 2;
+      keratoconusValue = (radius - y).toFixed(2);
+    }
+
     const pmdKeratoglobusValue = (radius - 0.6).toFixed(2);
     const postGraftValue = (radius - 0.7).toFixed(2);
     const postLasikValue = (radius - 0.7).toFixed(2); // Assuming post lasik is same as post graft
