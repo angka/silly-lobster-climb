@@ -41,6 +41,7 @@ export interface FittingSessionFormData {
   os_orbscan: string; // Merged field
 
   // Fitting Procedure - BC 6.9/7.0 (Left Column)
+  fp_bc_left_base_curve: string; // New field for Base Curve
   fp_bc_left_central_fit_1mm: string;
   fp_bc_left_nafl_1: string;
   fp_bc_left_nafl_2: string;
@@ -88,6 +89,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '', // Merged fields
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
       os_tbut_schirmer: '', os_pentacam: '', os_orbscan: '', // Merged fields
+      fp_bc_left_base_curve: '', // Initialize new field
       fp_bc_left_central_fit_1mm: '', fp_bc_left_nafl_1: '', fp_bc_left_nafl_2: '',
       fp_bc_left_nafl_3: '', fp_bc_left_description: '', fp_bc_left_clearance: '',
       fp_bc_left_c_center: '',
@@ -253,8 +255,12 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Fitting Procedure - Left Column (BC 6.9/7.0) */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">BC 6.9 / 7.0</h3>
+            <h3 className="text-lg font-semibold mb-4">OD</h3> {/* Changed to OD for clarity */}
             <div className="space-y-3">
+              <div>
+                <Label htmlFor="fp_bc_left_base_curve">BASE CURVE</Label>
+                <Input id="fp_bc_left_base_curve" value={formData.fp_bc_left_base_curve} onChange={handleChange} placeholder="e.g., 6.9 / 7.0" />
+              </div>
               <div>
                 <Label htmlFor="fp_bc_left_central_fit_1mm">CENTRAL FIT (1mm)</Label>
                 <Input id="fp_bc_left_central_fit_1mm" value={formData.fp_bc_left_central_fit_1mm} onChange={handleChange} />
@@ -288,7 +294,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
 
           {/* Fitting Procedure - Right Column (BC 6.3/6.5) */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">BC 6.3 / 6.5</h3>
+            <h3 className="text-lg font-semibold mb-4">OS</h3> {/* Changed to OS for clarity */}
             <div className="space-y-3">
               <div>
                 <Label htmlFor="fp_bc_right_central_fit_1mm">CENTRAL FIT (1mm)</Label>
