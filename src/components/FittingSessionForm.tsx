@@ -26,7 +26,8 @@ export interface FittingSessionFormData {
   od_cc_bcva: string;
   od_k1: string;
   od_k2: string;
-  od_mean_k: string;
+  od_mean_k_radius: string; // New field for Mean K Radius
+  od_mean_k_power: string;  // New field for Mean K Power
   od_kmax: string;
   od_tbut_schirmer: string;
   od_pentacam: string; // Merged field
@@ -37,7 +38,8 @@ export interface FittingSessionFormData {
   os_cc_bcva: string;
   os_k1: string;
   os_k2: string;
-  os_mean_k: string;
+  os_mean_k_radius: string; // New field for Mean K Radius
+  os_mean_k_power: string;  // New field for Mean K Power
   os_kmax: string;
   os_tbut_schirmer: string;
   os_pentacam: string; // Merged field
@@ -86,9 +88,9 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       medicalRecordNumber: medicalRecordNumber,
       date: new Date(),
       diagnosis: diagnosis, // Initialize diagnosis
-      od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k: '', od_kmax: '',
+      od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k_radius: '', od_mean_k_power: '', od_kmax: '',
       od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '',
-      os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k: '', os_kmax: '',
+      os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k_radius: '', os_mean_k_power: '', os_kmax: '',
       os_tbut_schirmer: '', os_pentacam: '', os_orbscan: '',
       odProcedures: [],
       osProcedures: [],
@@ -190,9 +192,16 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Label htmlFor="od_k2">K2</Label>
                 <Input id="od_k2" value={formData.od_k2} onChange={handleChange} />
               </div>
-              <div>
-                <Label htmlFor="od_mean_k">MEAN K</Label>
-                <Input id="od_mean_k" value={formData.od_mean_k} onChange={handleChange} />
+              {/* MEAN K - Radius and Power */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="od_mean_k_radius">MEAN K (Radius)</Label>
+                  <Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="od_mean_k_power">MEAN K (Power)</Label>
+                  <Input id="od_mean_k_power" value={formData.od_mean_k_power} onChange={handleChange} />
+                </div>
               </div>
               <div>
                 <Label htmlFor="od_kmax">KMAX</Label>
@@ -233,9 +242,16 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <Label htmlFor="os_k2">K2</Label>
                 <Input id="os_k2" value={formData.os_k2} onChange={handleChange} />
               </div>
-              <div>
-                <Label htmlFor="os_mean_k">MEAN K</Label>
-                <Input id="os_mean_k" value={formData.os_mean_k} onChange={handleChange} />
+              {/* MEAN K - Radius and Power */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="os_mean_k_radius">MEAN K (Radius)</Label>
+                  <Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="os_mean_k_power">MEAN K (Power)</Label>
+                  <Input id="os_mean_k_power" value={formData.os_mean_k_power} onChange={handleChange} />
+                </div>
               </div>
               <div>
                 <Label htmlFor="os_kmax">KMAX</Label>
