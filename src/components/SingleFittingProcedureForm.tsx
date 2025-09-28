@@ -14,6 +14,8 @@ export interface SingleFittingProcedureData {
   base_curve: string;
   diameter: string;
   power: string;
+  dynamic_fit: string; // New field
+  static_fit: string;  // New field
   over_refraction: string;
   va: string;
   overall_assessment: string;
@@ -147,6 +149,15 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
       <div>
         <Label htmlFor={`${eye.toLowerCase()}_power`}>Power</Label>
         <Input id={`${eye.toLowerCase()}_power`} value={data.power} onChange={handleChange} />
+      </div>
+      {/* New fields: Dynamic Fit and Static Fit */}
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_dynamic_fit`}>Dynamic Fit</Label>
+        <Input id={`${eye.toLowerCase()}_dynamic_fit`} value={data.dynamic_fit} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_static_fit`}>Static Fit</Label>
+        <Input id={`${eye.toLowerCase()}_static_fit`} value={data.static_fit} onChange={handleChange} />
       </div>
       <div>
         <Label htmlFor={`${eye.toLowerCase()}_over_refraction`}>Over Refraction</Label>
