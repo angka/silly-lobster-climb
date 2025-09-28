@@ -6,6 +6,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm'; // Import RGPFittingSessionFormData
 
 interface Patient extends PatientFormData {
   id: string;
@@ -17,7 +18,7 @@ interface Session {
   type: 'Fitting' | 'Follow-up';
   lensType?: 'ROSE_K2_XL' | 'RGP';
   date: Date;
-  data: FollowUpSessionFormData; // Specifically for FollowUpSessionFormData
+  data: FollowUpSessionFormData | RGPFittingSessionFormData; // Allow RGPFittingSessionFormData here
 }
 
 const FollowUpSessionPage: React.FC = () => {
@@ -29,6 +30,7 @@ const FollowUpSessionPage: React.FC = () => {
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [initialFollowUpData, setInitialFollowUpData] = useState<FollowUpSessionFormData | undefined>(undefined);
+  const [previousRGPFittingSessions, setPreviousRGPFittingSessions] = useState<Session[]>([]); // State for RGP fitting sessions
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -44,16 +46,25 @@ const FollowUpSessionPage: React.FC = () => {
       if (foundPatient) {
         setPatient(foundPatient);
 
-        if (sessionId && storedSessions) {
+        if (storedSessions) {
           const allSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
             ...s,
             date: new Date(s.date),
           }));
-          const foundSession = allSessions.find(s => s.id === sessionId && s.patientId === id && s.type === 'Follow-up');
-          if (foundSession) {
-            setInitialFollowUpData(foundSession.data as FollowUpSessionFormData);
-          } else {
-            showError('Follow-up session data not found.');
+
+          // Filter for RGP fitting sessions for the current patient
+          const rgpFittingSessions = allSessions.filter(
+            (s) => s.patientId === id && s.type === 'Fitting' && s.lensType === 'RGP'
+          );
+          setPreviousRGPFittingSessions(rgpFittingSessions);
+
+          if (sessionId) {
+            const foundSession = allSessions.find(s => s.id === sessionId && s.patientId === id && s.type === 'Follow-up');
+            if (foundSession) {
+              setInitialFollowUpData(foundSession.data as FollowUpSessionFormData);
+            } else {
+              showError('Follow-up session data not found.');
+            }
           }
         }
       } else {
@@ -131,10 +142,11 @@ const FollowUpSessionPage: React.FC = () => {
         <FollowUpSessionForm
           patientName={patient.name}
           medicalRecordNumber={patient.medicalRecordNumber}
-          lensType={lensType || initialFollowUpData?.lensType} // Pass lensType to the form
+          lensType={lensType || initialFollowUpData?.lensType}
           initialData={initialFollowUpData}
           onSubmit={handleSaveFollowUpSession}
           onCancel={handleCancel}
+          previousRGPFittingSessions={previousRGPFittingSessions} // Pass the filtered sessions
         />
       </div>
     </Layout>

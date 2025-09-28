@@ -7,14 +7,27 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { Input } from '@/components/ui/input'; // Import Input for new fields
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Import Select components
+import { RGPFittingSessionFormData } from './RGPFittingSessionForm'; // Import RGPFittingSessionFormData
+import { SingleFittingProcedureData } from './SingleFittingProcedureForm'; // Import SingleFittingProcedureData
+
+// Define a generic session interface for the prop
+interface PreviousSession {
+  id: string;
+  patientId: string;
+  type: 'Fitting' | 'Follow-up';
+  lensType?: 'ROSE_K2_XL' | 'RGP';
+  date: Date;
+  data: RGPFittingSessionFormData; // Specifically RGP fitting data for this context
+}
 
 export interface FollowUpSessionFormData {
   patientName: string;
   medicalRecordNumber: string;
   date: Date;
   notes: string;
-  lensType?: 'ROSE_K2_XL' | 'RGP'; // Added lensType
+  lensType?: 'ROSE_K2_XL' | 'RGP';
   // New fields for OD
   od_bcva: string;
   od_wfdt: string;
@@ -30,19 +43,21 @@ export interface FollowUpSessionFormData {
 interface FollowUpSessionFormProps {
   patientName: string;
   medicalRecordNumber: string;
-  lensType?: 'ROSE_K2_XL' | 'RGP'; // New prop
+  lensType?: 'ROSE_K2_XL' | 'RGP';
   initialData?: FollowUpSessionFormData;
   onSubmit: (data: FollowUpSessionFormData) => void;
   onCancel: () => void;
+  previousRGPFittingSessions?: PreviousSession[]; // New prop for previous RGP fitting sessions
 }
 
 const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   patientName,
   medicalRecordNumber,
-  lensType, // Destructure new prop
+  lensType,
   initialData,
   onSubmit,
   onCancel,
+  previousRGPFittingSessions = [], // Default to empty array
 }) => {
   const [date, setDate] = useState<Date>(initialData?.date || new Date());
   const [notes, setNotes] = useState(initialData?.notes || '');
@@ -56,6 +71,15 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   const [os_wfdt, setOs_wfdt] = useState(initialData?.os_wfdt || '');
   const [os_tno_stereoskopi, setOs_tno_stereoskopi] = useState(initialData?.os_tno_stereoskopi || '');
   const [os_bagolini_test, setOs_bagolini_test] = useState(initialData?.os_bagolini_test || '');
+
+  // New states for previous session selection and display
+  const [selectedPreviousSessionId, setSelectedPreviousSessionId] = useState<string>('');
+  const [displayedPreviousSessionData, setDisplayedPreviousSessionData] = useState<{
+    ccBcvaOD: string;
+    ccBcvaOS: string;
+    overRefractionOD: string;
+    bcvaOD: string;
+  } | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -72,6 +96,33 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
     }
   }, [initialData]);
 
+  // Effect to update displayed previous session data when selection changes
+  useEffect(() => {
+    if (selectedPreviousSessionId && previousRGPFittingSessions.length > 0) {
+      const selectedSession = previousRGPFittingSessions.find(
+        (session) => session.id === selectedPreviousSessionId
+      );
+
+      if (selectedSession) {
+        const rgpData = selectedSession.data;
+        const lastOdProcedure = rgpData.odProcedures.length > 0
+          ? rgpData.odProcedures[rgpData.odProcedures.length - 1]
+          : null;
+
+        setDisplayedPreviousSessionData({
+          ccBcvaOD: rgpData.od_cc_bcva,
+          ccBcvaOS: rgpData.os_cc_bcva,
+          overRefractionOD: lastOdProcedure?.over_refraction || 'N/A',
+          bcvaOD: lastOdProcedure?.va || 'N/A',
+        });
+      } else {
+        setDisplayedPreviousSessionData(null);
+      }
+    } else {
+      setDisplayedPreviousSessionData(null);
+    }
+  }, [selectedPreviousSessionId, previousRGPFittingSessions]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -79,7 +130,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       medicalRecordNumber,
       date,
       notes,
-      lensType, // Include lensType in submitted data
+      lensType,
       od_bcva,
       od_wfdt,
       od_tno_stereoskopi,
@@ -122,6 +173,58 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
           </PopoverContent>
         </Popover>
       </div>
+
+      {/* Previous RGP Fitting Session Data Section (Conditional) */}
+      {lensType === 'RGP' && previousRGPFittingSessions.length > 0 && (
+        <div className="border p-4 rounded-md bg-secondary/20 space-y-3">
+          <h3 className="text-lg font-semibold mb-2">Previous RGP Fitting Session</h3>
+          <div>
+            <Label htmlFor="previous-session-select">Select Previous Fitting Session</Label>
+            <Select value={selectedPreviousSessionId} onValueChange={setSelectedPreviousSessionId}>
+              <SelectTrigger id="previous-session-select">
+                <SelectValue placeholder="Choose a previous RGP session" />
+              </SelectTrigger>
+              <SelectContent>
+                {previousRGPFittingSessions.map((session) => (
+                  <SelectItem key={session.id} value={session.id}>
+                    {format(session.date, 'PPP')} - {session.data.patientName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {displayedPreviousSessionData && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <div>
+                <Label>Previous CC & BCVA (OD)</Label>
+                <Input value={displayedPreviousSessionData.ccBcvaOD} readOnly className="bg-muted" />
+              </div>
+              <div>
+                <Label>Previous CC & BCVA (OS)</Label>
+                <Input value={displayedPreviousSessionData.ccBcvaOS} readOnly className="bg-muted" />
+              </div>
+              <div>
+                <Label>Previous Over Refraction (OD Last Procedure)</Label>
+                <Input value={displayedPreviousSessionData.overRefractionOD} readOnly className="bg-muted" />
+              </div>
+              <div>
+                <Label>Previous BCVA (OD Last Procedure)</Label>
+                <Input value={displayedPreviousSessionData.bcvaOD} readOnly className="bg-muted" />
+              </div>
+            </div>
+          )}
+          {selectedPreviousSessionId && !displayedPreviousSessionData && (
+            <p className="text-sm text-muted-foreground">Loading previous session data...</p>
+          )}
+          {!selectedPreviousSessionId && (
+            <p className="text-sm text-muted-foreground">Select a session to view its details.</p>
+          )}
+        </div>
+      )}
+      {lensType === 'RGP' && previousRGPFittingSessions.length === 0 && (
+        <p className="text-sm text-muted-foreground">No previous RGP fitting sessions found for this patient.</p>
+      )}
 
       {/* OD (Right Eye) Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
