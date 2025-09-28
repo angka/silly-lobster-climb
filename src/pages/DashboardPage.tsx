@@ -283,6 +283,24 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
     return matchesCategory && matchesSearch;
   });
 
+  // Calculate total patients for each category
+  const totalAllPatients = patients.length;
+  const totalRGP Patients = patients.filter(p => p.lensCategory === 'RGP').length;
+  const totalScleralLensPatients = patients.filter(p => p.lensCategory === 'Scleral lens').length;
+
+  const getCategoryCount = () => {
+    switch (selectedCategory) {
+      case 'All':
+        return totalAllPatients;
+      case 'RGP':
+        return totalRGPPatients;
+      case 'Scleral lens':
+        return totalScleralLensPatients;
+      default:
+        return 0;
+    }
+  };
+
   return (
     <Layout> {/* Removed showLogout and onLogout props */}
       <div className="flex flex-col md:flex-row gap-6">
@@ -295,7 +313,9 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
         {/* Right Panel for Patient List */}
         <div className="md:w-3/4 lg:w-4/5">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Patient List ({selectedCategory})</h1>
+            <h1 className="text-3xl font-bold">
+              Patient List ({selectedCategory}) <span className="text-muted-foreground text-2xl">({getCategoryCount()})</span>
+            </h1>
             <div className="flex space-x-2"> {/* Group buttons */}
               <Button onClick={handleExportPatients} variant="outline">
                 <Download className="mr-2 h-4 w-4" /> Export JSON
