@@ -14,18 +14,6 @@ export interface SingleFittingProcedureData {
   power: string;
   over_refraction: string;
   va: string;
-  central_fit_1mm: string; // Added
-  nafl_superior: string;
-  nafl_inferior: string;
-  nafl_nasal: string;
-  nafl_temporal: string;
-  nafl_central: string;
-  dia_location_movement: string; // Added
-  oct: string; // Added
-  terpasang: string; // Added
-  vdc: string; // Added
-  custom: string; // Added
-  r: string; // Added
   overall_assessment: string;
   comments: string;
 }
@@ -83,60 +71,6 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
       <div>
         <Label htmlFor={`${eye.toLowerCase()}_va`}>VA</Label>
         <Input id={`${eye.toLowerCase()}_va`} value={data.va} onChange={handleChange} />
-      </div>
-
-      <h4 className="text-md font-semibold mt-4">Fitting Assessment</h4>
-      <div>
-        <Label htmlFor={`${eye.toLowerCase()}_central_fit_1mm`}>Central Fit (1mm)</Label>
-        <Input id={`${eye.toLowerCase()}_central_fit_1mm`} value={data.central_fit_1mm} onChange={handleChange} />
-      </div>
-      <div>
-        <Label htmlFor={`${eye.toLowerCase()}_dia_location_movement`}>DIA / Location / Movement</Label>
-        <Input id={`${eye.toLowerCase()}_dia_location_movement`} value={data.dia_location_movement} onChange={handleChange} />
-      </div>
-      <div>
-        <Label htmlFor={`${eye.toLowerCase()}_oct`}>OCT</Label>
-        <Input id={`${eye.toLowerCase()}_oct`} value={data.oct} onChange={handleChange} />
-      </div>
-      <div>
-        <Label htmlFor={`${eye.toLowerCase()}_terpasang`}>Terpasang</Label>
-        <Input id={`${eye.toLowerCase()}_terpasang`} value={data.terpasang} onChange={handleChange} />
-      </div>
-      <div>
-        <Label htmlFor={`${eye.toLowerCase()}_vdc`}>VDC</Label>
-        <Input id={`${eye.toLowerCase()}_vdc`} value={data.vdc} onChange={handleChange} />
-      </div>
-      <div>
-        <Label htmlFor={`${eye.toLowerCase()}_custom`}>Custom</Label>
-        <Input id={`${eye.toLowerCase()}_custom`} value={data.custom} onChange={handleChange} />
-      </div>
-      <div>
-        <Label htmlFor={`${eye.toLowerCase()}_r`}>R</Label>
-        <Input id={`${eye.toLowerCase()}_r`} value={data.r} onChange={handleChange} />
-      </div>
-
-      <h4 className="text-md font-semibold mt-4">NAFL (Sodium Fluorescein)</h4>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_nafl_superior`}>Superior</Label>
-          <Input id={`${eye.toLowerCase()}_nafl_superior`} value={data.nafl_superior} onChange={handleChange} />
-        </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_nafl_inferior`}>Inferior</Label>
-          <Input id={`${eye.toLowerCase()}_nafl_inferior`} value={data.nafl_inferior} onChange={handleChange} />
-        </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_nafl_nasal`}>Nasal</Label>
-          <Input id={`${eye.toLowerCase()}_nafl_nasal`} value={data.nafl_nasal} onChange={handleChange} />
-        </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_nafl_temporal`}>Temporal</Label>
-          <Input id={`${eye.toLowerCase()}_nafl_temporal`} value={data.nafl_temporal} onChange={handleChange} />
-        </div>
-        <div className="col-span-2">
-          <Label htmlFor={`${eye.toLowerCase()}_nafl_central`}>Central</Label>
-          <Input id={`${eye.toLowerCase()}_nafl_central`} value={data.nafl_central} onChange={handleChange} />
-        </div>
       </div>
 
       <div className="mt-4">
