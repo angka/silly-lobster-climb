@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,13 +26,49 @@ interface SingleFittingProcedureFormProps {
   onChange: (updatedData: SingleFittingProcedureData) => void; // Changed to pass full object
   onDelete: (id: string) => void; // Added onDelete prop
   canDelete: boolean; // Added canDelete prop
+  k1Radius: string; // New prop for K1 Radius from parent
+  k2Radius: string; // New prop for K2 Radius from parent
 }
 
-const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({ eye, data, onChange, onDelete, canDelete }) => {
+const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({ eye, data, onChange, onDelete, canDelete, k1Radius, k2Radius }) => {
+  // State to track if the leading_base_curve has been manually edited
+  const [hasUserEditedLeadingBaseCurve, setHasUserEditedLeadingBaseCurve] = useState(false);
+
+  // Initialize hasUserEditedLeadingBaseCurve based on initial data
+  useEffect(() => {
+    if (data.leading_base_curve) {
+      setHasUserEditedLeadingBaseCurve(true);
+    } else {
+      setHasUserEditedLeadingBaseCurve(false);
+    }
+  }, [data.leading_base_curve]);
+
+  // Effect to calculate leading_base_curve automatically
+  useEffect(() => {
+    if (!hasUserEditedLeadingBaseCurve) {
+      const k1 = parseFloat(k1Radius);
+      const k2 = parseFloat(k2Radius);
+
+      if (!isNaN(k1) && !isNaN(k2)) {
+        const calculatedValue = (k1 - k2).toFixed(2);
+        if (data.leading_base_curve !== calculatedValue) {
+          onChange({ ...data, leading_base_curve: calculatedValue });
+        }
+      } else if (data.leading_base_curve !== '') {
+        // If K1 or K2 are not valid numbers, clear the calculated field if it's not manually edited
+        onChange({ ...data, leading_base_curve: '' });
+      }
+    }
+  }, [k1Radius, k2Radius, hasUserEditedLeadingBaseCurve, data.leading_base_curve, onChange, data]);
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    // Remove the eye prefix to get the actual field name
     const fieldName = id.replace(`${eye.toLowerCase()}_`, '') as keyof SingleFittingProcedureData;
+
+    if (fieldName === 'leading_base_curve') {
+      setHasUserEditedLeadingBaseCurve(true); // Mark as manually edited
+    }
     onChange({ ...data, [fieldName]: value });
   };
 

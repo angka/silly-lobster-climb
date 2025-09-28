@@ -301,11 +301,15 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
             eye="OD"
             procedures={formData.odProcedures}
             onUpdateProcedures={handleUpdateODProcedures}
+            k1Radius={formData.od_k1_radius}
+            k2Radius={formData.od_k2_radius}
           />
           <FittingProcedurePanel
             eye="OS"
             procedures={formData.osProcedures}
             onUpdateProcedures={handleUpdateOSProcedures}
+            k1Radius={formData.os_k1_radius}
+            k2Radius={formData.os_k2_radius}
           />
         </CardContent>
       </Card>
