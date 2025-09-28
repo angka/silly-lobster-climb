@@ -35,6 +35,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main className="flex-grow container mx-auto p-4">
         {children}
       </main>
+      <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
+        System made by Matagama Angka (AK)
+      </footer>
     </div>
   );
 };
