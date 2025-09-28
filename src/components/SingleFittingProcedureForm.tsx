@@ -33,6 +33,8 @@ interface SingleFittingProcedureFormProps {
 const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({ eye, data, onChange, onDelete, canDelete, k1Radius, k2Radius }) => {
   // State to track if the leading_base_curve has been manually edited
   const [hasUserEditedLeadingBaseCurve, setHasUserEditedLeadingBaseCurve] = useState(false);
+  // State to track if the real_base_curve has been manually edited
+  const [hasUserEditedRealBaseCurve, setHasUserEditedRealBaseCurve] = useState(false);
 
   // Initialize hasUserEditedLeadingBaseCurve based on initial data
   useEffect(() => {
@@ -42,6 +44,15 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
       setHasUserEditedLeadingBaseCurve(false);
     }
   }, [data.leading_base_curve]);
+
+  // Initialize hasUserEditedRealBaseCurve based on initial data
+  useEffect(() => {
+    if (data.real_base_curve) {
+      setHasUserEditedRealBaseCurve(true);
+    } else {
+      setHasUserEditedRealBaseCurve(false);
+    }
+  }, [data.real_base_curve]);
 
   // Effect to calculate leading_base_curve automatically
   useEffect(() => {
@@ -61,6 +72,31 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
     }
   }, [k1Radius, k2Radius, hasUserEditedLeadingBaseCurve, data.leading_base_curve, onChange, data]);
 
+  // Effect to calculate real_base_curve automatically
+  useEffect(() => {
+    if (!hasUserEditedRealBaseCurve) {
+      const leadingBC = parseFloat(data.leading_base_curve);
+      const k1 = parseFloat(k1Radius);
+      let calculatedRealBC: string = '';
+
+      if (!isNaN(leadingBC) && !isNaN(k1)) {
+        if (leadingBC < 0.10) {
+          calculatedRealBC = k1.toFixed(2);
+        } else if (leadingBC >= 0.10 && leadingBC <= 0.20) {
+          calculatedRealBC = (k1 - 0.10).toFixed(2);
+        } else if (leadingBC >= 0.21 && leadingBC <= 0.35) {
+          calculatedRealBC = (k1 - 0.15).toFixed(2);
+        } else if (leadingBC >= 0.36) {
+          calculatedRealBC = (k1 - 0.20).toFixed(2);
+        }
+      }
+
+      if (data.real_base_curve !== calculatedRealBC) {
+        onChange({ ...data, real_base_curve: calculatedRealBC });
+      }
+    }
+  }, [data.leading_base_curve, k1Radius, hasUserEditedRealBaseCurve, data.real_base_curve, onChange, data]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -68,6 +104,8 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
 
     if (fieldName === 'leading_base_curve') {
       setHasUserEditedLeadingBaseCurve(true); // Mark as manually edited
+    } else if (fieldName === 'real_base_curve') {
+      setHasUserEditedRealBaseCurve(true); // Mark as manually edited
     }
     onChange({ ...data, [fieldName]: value });
   };
