@@ -11,24 +11,22 @@ import { format } from 'date-fns';
 import { FittingSessionFormData } from '@/components/FittingSessionForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import FollowUpSessionForm, { FollowUpSessionFormData } from '@/components/FollowUpSessionForm'; // Import new form
-import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm'; // Import RGPFittingSessionFormData
+import FollowUpSessionForm, { FollowUpSessionFormData } from '@/components/FollowUpSessionForm';
+import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm';
 
 interface Patient extends PatientFormData {
   id: string;
 }
 
-// Define a generic session interface
 interface Session {
   id: string;
   patientId: string;
   type: 'Fitting' | 'Follow-up';
-  lensType?: 'ROSE_K2_XL' | 'RGP'; // Add lensType to session
+  lensType?: 'ROSE_K2_XL' | 'RGP';
   date: Date;
   data: FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData;
 }
 
-// Define a specific interface for RGP fitting sessions to be passed to FollowUpSessionForm
 interface PreviousRGPFittingSessionForForm {
   id: string;
   patientId: string;
@@ -50,7 +48,7 @@ const PatientDetailsPage: React.FC = () => {
   const [isFollowUpLensTypeSelectionOpen, setIsFollowUpLensTypeSelectionOpen] = useState(false);
   const [selectedFollowUpLensType, setSelectedFollowUpLensType] = useState<'ROSE_K2_XL' | 'RGP' | undefined>(undefined);
   const [editingFollowUpSession, setEditingFollowUpSession] = useState<FollowUpSessionFormData & { id: string, lensType?: 'ROSE_K2_XL' | 'RGP' } | null>(null);
-  const [previousRGPFittingSessionsForForm, setPreviousRGPFittingSessionsForForm] = useState<PreviousRGPFittingSessionForForm[]>([]); // New state for RGP fitting sessions
+  const [previousRGPFittingSessionsForForm, setPreviousRGPFittingSessionsForForm] = useState<PreviousRGPFittingSessionForForm[]>([]);
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -82,7 +80,6 @@ const PatientDetailsPage: React.FC = () => {
       const patientSessions = allSessions.filter(s => s.patientId === id);
       setSessions(patientSessions.sort((a, b) => b.date.getTime() - a.date.getTime()));
 
-      // Filter for RGP fitting sessions for the current patient to pass to FollowUpSessionForm
       const rgpFittingSessions = allSessions.filter(
         (s): s is PreviousRGPFittingSessionForForm =>
           s.patientId === id && s.type === 'Fitting' && s.lensType === 'RGP'
@@ -105,15 +102,15 @@ const PatientDetailsPage: React.FC = () => {
   };
 
   const handleStartFollowUpSession = () => {
-    setEditingFollowUpSession(null); // Clear any previous editing data
-    setSelectedFollowUpLensType(undefined); // Clear previous lens type selection
-    setIsFollowUpLensTypeSelectionOpen(true); // Open lens type selection dialog
+    setEditingFollowUpSession(null);
+    setSelectedFollowUpLensType(undefined);
+    setIsFollowUpLensTypeSelectionOpen(true);
   };
 
   const handleSelectFollowUpLensType = (lensType: 'ROSE_K2_XL' | 'RGP') => {
     setSelectedFollowUpLensType(lensType);
-    setIsFollowUpLensTypeSelectionOpen(false); // Close lens type selection
-    setIsFollowUpSessionDialogOpen(true); // Open follow-up form dialog
+    setIsFollowUpLensTypeSelectionOpen(false);
+    setIsFollowUpSessionDialogOpen(true);
   };
 
   const handleSaveFollowUpSession = (data: FollowUpSessionFormData) => {
@@ -126,7 +123,7 @@ const PatientDetailsPage: React.FC = () => {
       id: editingFollowUpSession?.id || `followup-${Date.now()}`,
       patientId: patient.id,
       type: 'Follow-up',
-      lensType: selectedFollowUpLensType || editingFollowUpSession?.lensType, // Save the selected lens type
+      lensType: selectedFollowUpLensType || editingFollowUpSession?.lensType,
       date: data.date,
       data: data,
     };
@@ -149,7 +146,7 @@ const PatientDetailsPage: React.FC = () => {
     setSessions(existingSessions.filter(s => s.patientId === patient.id).sort((a, b) => b.date.getTime() - a.date.getTime()));
     setIsFollowUpSessionDialogOpen(false);
     setEditingFollowUpSession(null);
-    setSelectedFollowUpLensType(undefined); // Clear selected lens type after saving
+    setSelectedFollowUpLensType(undefined);
   };
 
   const handleViewSessionDetails = (sessionId: string, sessionType: 'Fitting' | 'Follow-up', lensType?: 'ROSE_K2_XL' | 'RGP') => {
@@ -195,7 +192,6 @@ const PatientDetailsPage: React.FC = () => {
         </Button>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Column: Patient Details and Session History */}
           <div className="md:col-span-2 space-y-6">
             <Card>
               <CardHeader>
@@ -299,7 +295,6 @@ const PatientDetailsPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Right Column: Start New Session */}
           <div className="md:col-span-1">
             <Card>
               <CardHeader>
@@ -319,7 +314,6 @@ const PatientDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Delete Session Alert Dialog */}
       <AlertDialog open={isSessionDeleteDialogOpen} onOpenChange={setIsSessionDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -339,7 +333,6 @@ const PatientDetailsPage: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Fitting Lens Type Selection Dialog */}
       <Dialog open={isFittingLensTypeSelectionOpen} onOpenChange={setIsFittingLensTypeSelectionOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -366,7 +359,6 @@ const PatientDetailsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Follow-up Lens Type Selection Dialog (NEW) */}
       <Dialog open={isFollowUpLensTypeSelectionOpen} onOpenChange={setIsFollowUpLensTypeSelectionOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -393,7 +385,6 @@ const PatientDetailsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Follow-up Session Dialog */}
       <Dialog open={isFollowUpSessionDialogOpen} onOpenChange={setIsFollowUpSessionDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -414,7 +405,7 @@ const PatientDetailsPage: React.FC = () => {
                 setEditingFollowUpSession(null);
                 setSelectedFollowUpLensType(undefined);
               }}
-              previousRGPFittingSessions={previousRGPFittingSessionsForForm} {/* Pass the sessions here */}
+              previousRGPFittingSessions={previousRGPFittingSessionsForForm}
             />
           )}
         </DialogContent>
