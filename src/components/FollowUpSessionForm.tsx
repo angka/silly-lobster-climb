@@ -14,6 +14,7 @@ export interface FollowUpSessionFormData {
   medicalRecordNumber: string;
   date: Date;
   notes: string;
+  lensType?: 'ROSE_K2_XL' | 'RGP'; // Added lensType
   // New fields for OD
   od_bcva: string;
   od_wfdt: string;
@@ -29,6 +30,7 @@ export interface FollowUpSessionFormData {
 interface FollowUpSessionFormProps {
   patientName: string;
   medicalRecordNumber: string;
+  lensType?: 'ROSE_K2_XL' | 'RGP'; // New prop
   initialData?: FollowUpSessionFormData;
   onSubmit: (data: FollowUpSessionFormData) => void;
   onCancel: () => void;
@@ -37,6 +39,7 @@ interface FollowUpSessionFormProps {
 const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   patientName,
   medicalRecordNumber,
+  lensType, // Destructure new prop
   initialData,
   onSubmit,
   onCancel,
@@ -76,6 +79,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       medicalRecordNumber,
       date,
       notes,
+      lensType, // Include lensType in submitted data
       od_bcva,
       od_wfdt,
       od_tno_stereoskopi,
@@ -91,6 +95,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-4 p-4">
       <div className="text-lg font-semibold">
         Follow-up for: <span className="font-bold">{patientName}</span> (MRN: {medicalRecordNumber})
+        {lensType && <span className="ml-2 text-muted-foreground">({lensType})</span>}
       </div>
       <div>
         <Label htmlFor="date">Date of Session</Label>

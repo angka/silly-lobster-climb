@@ -34,9 +34,11 @@ const PatientDetailsPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
   const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false);
-  const [isLensTypeSelectionOpen, setIsLensTypeSelectionOpen] = useState(false);
-  const [isFollowUpSessionDialogOpen, setIsFollowUpSessionDialogOpen] = useState(false); // New state for follow-up dialog
-  const [editingFollowUpSession, setEditingFollowUpSession] = useState<FollowUpSessionFormData & { id: string } | null>(null); // State for editing follow-up
+  const [isFittingLensTypeSelectionOpen, setIsFittingLensTypeSelectionOpen] = useState(false); // Renamed for clarity
+  const [isFollowUpSessionDialogOpen, setIsFollowUpSessionDialogOpen] = useState(false);
+  const [isFollowUpLensTypeSelectionOpen, setIsFollowUpLensTypeSelectionOpen] = useState(false); // New state for follow-up lens type selection
+  const [selectedFollowUpLensType, setSelectedFollowUpLensType] = useState<'ROSE_K2_XL' | 'RGP' | undefined>(undefined); // New state to store selected lens type for follow-up
+  const [editingFollowUpSession, setEditingFollowUpSession] = useState<FollowUpSessionFormData & { id: string, lensType?: 'ROSE_K2_XL' | 'RGP' } | null>(null); // State for editing follow-up
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -71,11 +73,11 @@ const PatientDetailsPage: React.FC = () => {
   }, [id, navigate]);
 
   const handleStartFittingSession = () => {
-    setIsLensTypeSelectionOpen(true);
+    setIsFittingLensTypeSelectionOpen(true);
   };
 
-  const handleSelectLensType = (lensType: 'ROSE_K2_XL' | 'RGP') => {
-    setIsLensTypeSelectionOpen(false);
+  const handleSelectFittingLensType = (lensType: 'ROSE_K2_XL' | 'RGP') => {
+    setIsFittingLensTypeSelectionOpen(false);
     if (!patient) {
       showError('Patient data not loaded.');
       return;
@@ -85,7 +87,14 @@ const PatientDetailsPage: React.FC = () => {
 
   const handleStartFollowUpSession = () => {
     setEditingFollowUpSession(null); // Clear any previous editing data
-    setIsFollowUpSessionDialogOpen(true);
+    setSelectedFollowUpLensType(undefined); // Clear previous lens type selection
+    setIsFollowUpLensTypeSelectionOpen(true); // Open lens type selection dialog
+  };
+
+  const handleSelectFollowUpLensType = (lensType: 'ROSE_K2_XL' | 'RGP') => {
+    setSelectedFollowUpLensType(lensType);
+    setIsFollowUpLensTypeSelectionOpen(false); // Close lens type selection
+    setIsFollowUpSessionDialogOpen(true); // Open follow-up form dialog
   };
 
   const handleSaveFollowUpSession = (data: FollowUpSessionFormData) => {
@@ -98,6 +107,7 @@ const PatientDetailsPage: React.FC = () => {
       id: editingFollowUpSession?.id || `followup-${Date.now()}`,
       patientId: patient.id,
       type: 'Follow-up',
+      lensType: selectedFollowUpLensType || editingFollowUpSession?.lensType, // Save the selected lens type
       date: data.date,
       data: data,
     };
@@ -120,13 +130,14 @@ const PatientDetailsPage: React.FC = () => {
     setSessions(existingSessions.filter(s => s.patientId === patient.id).sort((a, b) => b.date.getTime() - a.date.getTime()));
     setIsFollowUpSessionDialogOpen(false);
     setEditingFollowUpSession(null);
+    setSelectedFollowUpLensType(undefined); // Clear selected lens type after saving
   };
 
   const handleViewSessionDetails = (sessionId: string, sessionType: 'Fitting' | 'Follow-up', lensType?: 'ROSE_K2_XL' | 'RGP') => {
     if (sessionType === 'Fitting') {
       navigate(`/patients/${patient?.id}/fitting-session?sessionId=${sessionId}${lensType ? `&lensType=${lensType}` : ''}`);
     } else if (sessionType === 'Follow-up') {
-      navigate(`/patients/${patient?.id}/follow-up-session?sessionId=${sessionId}`);
+      navigate(`/patients/${patient?.id}/follow-up-session?sessionId=${sessionId}${lensType ? `&lensType=${lensType}` : ''}`);
     }
   };
 
@@ -309,20 +320,47 @@ const PatientDetailsPage: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Lens Type Selection Dialog */}
-      <Dialog open={isLensTypeSelectionOpen} onOpenChange={setIsLensTypeSelectionOpen}>
+      {/* Fitting Lens Type Selection Dialog */}
+      <Dialog open={isFittingLensTypeSelectionOpen} onOpenChange={setIsFittingLensTypeSelectionOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Select Lens Type</DialogTitle>
+            <DialogTitle>Select Lens Type for Fitting</DialogTitle>
             <DialogDescription>
               Choose the type of lens for this fitting session.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Button onClick={() => handleSelectLensType('ROSE_K2_XL')}>
+            <Button onClick={() => handleSelectFittingLensType('ROSE_K2_XL')}>
               ROSE K2 XL
             </Button>
-            <Button variant="secondary" onClick={() => handleSelectLensType('RGP')}>
+            <Button variant="secondary" onClick={() => handleSelectFittingLensType('RGP')}>
+              RGP
+            </Button>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Follow-up Lens Type Selection Dialog (NEW) */}
+      <Dialog open={isFollowUpLensTypeSelectionOpen} onOpenChange={setIsFollowUpLensTypeSelectionOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Select Lens Type for Follow-up</DialogTitle>
+            <DialogDescription>
+              Choose the type of lens this follow-up session is for.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button onClick={() => handleSelectFollowUpLensType('ROSE_K2_XL')}>
+              ROSE K2 XL
+            </Button>
+            <Button variant="secondary" onClick={() => handleSelectFollowUpLensType('RGP')}>
               RGP
             </Button>
           </div>
@@ -345,15 +383,17 @@ const PatientDetailsPage: React.FC = () => {
               {editingFollowUpSession ? 'Edit the details of this follow-up session.' : 'Enter the details for the new follow-up session.'}
             </DialogDescription>
           </DialogHeader>
-          {patient && (
+          {patient && (selectedFollowUpLensType || editingFollowUpSession) && (
             <FollowUpSessionForm
               patientName={patient.name}
               medicalRecordNumber={patient.medicalRecordNumber}
+              lensType={selectedFollowUpLensType || editingFollowUpSession?.lensType} // Pass selected lens type
               initialData={editingFollowUpSession || undefined}
               onSubmit={handleSaveFollowUpSession}
               onCancel={() => {
                 setIsFollowUpSessionDialogOpen(false);
                 setEditingFollowUpSession(null);
+                setSelectedFollowUpLensType(undefined); // Clear selected lens type on cancel
               }}
             />
           )}

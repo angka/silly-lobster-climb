@@ -25,6 +25,7 @@ const FollowUpSessionPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
+  const lensType = searchParams.get('lensType') as 'ROSE_K2_XL' | 'RGP' | null; // Get lensType from URL
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [initialFollowUpData, setInitialFollowUpData] = useState<FollowUpSessionFormData | undefined>(undefined);
@@ -75,6 +76,7 @@ const FollowUpSessionPage: React.FC = () => {
       id: sessionId || `followup-${Date.now()}`,
       patientId: id!,
       type: 'Follow-up',
+      lensType: lensType || data.lensType, // Ensure lensType is saved
       date: data.date,
       data: data,
     };
@@ -129,6 +131,7 @@ const FollowUpSessionPage: React.FC = () => {
         <FollowUpSessionForm
           patientName={patient.name}
           medicalRecordNumber={patient.medicalRecordNumber}
+          lensType={lensType || initialFollowUpData?.lensType} // Pass lensType to the form
           initialData={initialFollowUpData}
           onSubmit={handleSaveFollowUpSession}
           onCancel={handleCancel}
