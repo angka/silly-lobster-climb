@@ -153,7 +153,7 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
         <Input id={`${eye.toLowerCase()}_over_refraction`} value={data.over_refraction} onChange={handleChange} />
       </div>
       <div>
-        <Label htmlFor={`${eye.toLowerCase()}_va`}>VA</Label>
+        <Label htmlFor={`${eye.toLowerCase()}_va`}>BCVA</Label>
         <Input id={`${eye.toLowerCase()}_va`} value={data.va} onChange={handleChange} />
       </div>
 
