@@ -10,15 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { FittingSessionFormData } from '@/components/FittingSessionForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog'; // Import Dialog components
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import FollowUpSessionForm, { FollowUpSessionFormData } from '@/components/FollowUpSessionForm'; // Import new form
 
 interface Patient extends PatientFormData {
   id: string;
-}
-
-interface FollowUpSessionFormData {
-  notes: string;
-  // Add other follow-up specific fields here if needed
 }
 
 // Define a generic session interface
@@ -38,7 +34,9 @@ const PatientDetailsPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
   const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false);
-  const [isLensTypeSelectionOpen, setIsLensTypeSelectionOpen] = useState(false); // New state for lens type selection dialog
+  const [isLensTypeSelectionOpen, setIsLensTypeSelectionOpen] = useState(false);
+  const [isFollowUpSessionDialogOpen, setIsFollowUpSessionDialogOpen] = useState(false); // New state for follow-up dialog
+  const [editingFollowUpSession, setEditingFollowUpSession] = useState<FollowUpSessionFormData & { id: string } | null>(null); // State for editing follow-up
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -86,15 +84,49 @@ const PatientDetailsPage: React.FC = () => {
   };
 
   const handleStartFollowUpSession = () => {
-    showError('Follow-up session is not yet implemented.');
-    // In a real application, you would navigate to a specific session form here.
+    setEditingFollowUpSession(null); // Clear any previous editing data
+    setIsFollowUpSessionDialogOpen(true);
+  };
+
+  const handleSaveFollowUpSession = (data: FollowUpSessionFormData) => {
+    if (!patient) {
+      showError('Patient data not loaded.');
+      return;
+    }
+
+    const newSession: Session = {
+      id: editingFollowUpSession?.id || `followup-${Date.now()}`,
+      patientId: patient.id,
+      type: 'Follow-up',
+      date: data.date,
+      data: data,
+    };
+
+    const storedSessions = localStorage.getItem('sessions');
+    let existingSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
+      ...s,
+      date: new Date(s.date),
+    })) : [];
+
+    if (editingFollowUpSession) {
+      existingSessions = existingSessions.map(s => s.id === editingFollowUpSession.id ? newSession : s);
+      showSuccess(`Follow-up session for ${patient.name} updated successfully!`);
+    } else {
+      existingSessions = [...existingSessions, newSession];
+      showSuccess(`New follow-up session for ${patient.name} added successfully!`);
+    }
+
+    localStorage.setItem('sessions', JSON.stringify(existingSessions));
+    setSessions(existingSessions.filter(s => s.patientId === patient.id).sort((a, b) => b.date.getTime() - a.date.getTime()));
+    setIsFollowUpSessionDialogOpen(false);
+    setEditingFollowUpSession(null);
   };
 
   const handleViewSessionDetails = (sessionId: string, sessionType: 'Fitting' | 'Follow-up', lensType?: 'ROSE_K2_XL' | 'RGP') => {
     if (sessionType === 'Fitting') {
       navigate(`/patients/${patient?.id}/fitting-session?sessionId=${sessionId}${lensType ? `&lensType=${lensType}` : ''}`);
-    } else {
-      showError('Viewing follow-up session details is not yet implemented.');
+    } else if (sessionType === 'Follow-up') {
+      navigate(`/patients/${patient?.id}/follow-up-session?sessionId=${sessionId}`);
     }
   };
 
@@ -195,7 +227,7 @@ const PatientDetailsPage: React.FC = () => {
                         <TableRow>
                           <TableHead>Date</TableHead>
                           <TableHead>Type</TableHead>
-                          <TableHead>Lens Type</TableHead> {/* New column */}
+                          <TableHead>Lens Type</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -204,7 +236,7 @@ const PatientDetailsPage: React.FC = () => {
                           <TableRow key={session.id}>
                             <TableCell>{format(session.date, 'PPP')}</TableCell>
                             <TableCell>{session.type}</TableCell>
-                            <TableCell>{session.lensType || 'N/A'}</TableCell> {/* Display lens type */}
+                            <TableCell>{session.lensType || 'N/A'}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
                                 <Button
@@ -301,6 +333,30 @@ const PatientDetailsPage: React.FC = () => {
               </Button>
             </DialogClose>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Follow-up Session Dialog */}
+      <Dialog open={isFollowUpSessionDialogOpen} onOpenChange={setIsFollowUpSessionDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingFollowUpSession ? 'Edit Follow-up Session' : 'Start New Follow-up Session'}</DialogTitle>
+            <DialogDescription>
+              {editingFollowUpSession ? 'Edit the details of this follow-up session.' : 'Enter the details for the new follow-up session.'}
+            </DialogDescription>
+          </DialogHeader>
+          {patient && (
+            <FollowUpSessionForm
+              patientName={patient.name}
+              medicalRecordNumber={patient.medicalRecordNumber}
+              initialData={editingFollowUpSession || undefined}
+              onSubmit={handleSaveFollowUpSession}
+              onCancel={() => {
+                setIsFollowUpSessionDialogOpen(false);
+                setEditingFollowUpSession(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </Layout>

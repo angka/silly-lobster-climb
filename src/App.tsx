@@ -9,6 +9,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import PatientDetailsPage from "./pages/PatientDetailsPage";
 import FittingSessionPage from "./pages/FittingSessionPage";
+import FollowUpSessionPage from "./pages/FollowUpSessionPage"; // Import new page
 import React, { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,14 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <FittingSessionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/patients/:id/follow-up-session"
+        element={
+          <ProtectedRoute>
+            <FollowUpSessionPage />
           </ProtectedRoute>
         }
       />
