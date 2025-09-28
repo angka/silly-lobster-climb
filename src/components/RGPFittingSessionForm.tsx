@@ -22,20 +22,28 @@ export interface RGPFittingSessionFormData {
   // OD (Right Eye)
   od_ucva: string;
   od_cc_bcva: string;
-  od_k1: string;
-  od_k2: string;
+  od_k1_radius: string; // New field for K1 Radius
+  od_k1_power: string;  // New field for K1 Power
+  od_k1_angle: string;  // New field for K1 Angle
+  od_k2_radius: string; // New field for K2 Radius
+  od_k2_power: string;  // New field for K2 Power
+  od_k2_angle: string;  // New field for K2 Angle
   od_tbut_schirmer: string;
-  od_wfdt: string; // New field
-  od_stereoscopy: string; // New field
+  od_wfdt: string;
+  od_stereoscopy: string;
 
   // OS (Left Eye)
   os_ucva: string;
   os_cc_bcva: string;
-  os_k1: string;
-  os_k2: string;
+  os_k1_radius: string; // New field for K1 Radius
+  os_k1_power: string;  // New field for K1 Power
+  os_k1_angle: string;  // New field for K1 Angle
+  os_k2_radius: string; // New field for K2 Radius
+  os_k2_power: string;  // New field for K2 Power
+  os_k2_angle: string;  // New field for K2 Angle
   os_tbut_schirmer: string;
-  os_wfdt: string; // New field
-  os_stereoscopy: string; // New field
+  os_wfdt: string;
+  os_stereoscopy: string;
 
   // Fitting Procedures
   odProcedures: SingleFittingProcedureData[];
@@ -81,8 +89,14 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
       date: new Date(),
       diagnosis: diagnosis,
       // RGP fields
-      od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_tbut_schirmer: '', od_wfdt: '', od_stereoscopy: '',
-      os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_tbut_schirmer: '', os_wfdt: '', os_stereoscopy: '',
+      od_ucva: '', od_cc_bcva: '',
+      od_k1_radius: '', od_k1_power: '', od_k1_angle: '',
+      od_k2_radius: '', od_k2_power: '', od_k2_angle: '',
+      od_tbut_schirmer: '', od_wfdt: '', od_stereoscopy: '',
+      os_ucva: '', os_cc_bcva: '',
+      os_k1_radius: '', os_k1_power: '', os_k1_angle: '',
+      os_k2_radius: '', os_k2_power: '', os_k2_angle: '',
+      os_tbut_schirmer: '', os_wfdt: '', os_stereoscopy: '',
       odProcedures: [],
       osProcedures: [],
     }
@@ -174,13 +188,35 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
                 <Label htmlFor="od_cc_bcva">CC & BCVA</Label>
                 <Input id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} />
               </div>
-              <div>
-                <Label htmlFor="od_k1">K1</Label>
-                <Input id="od_k1" value={formData.od_k1} onChange={handleChange} />
+              {/* K1 Fields */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label htmlFor="od_k1_radius">K1 (Radius)</Label>
+                  <Input id="od_k1_radius" value={formData.od_k1_radius} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="od_k1_power">K1 (Power)</Label>
+                  <Input id="od_k1_power" value={formData.od_k1_power} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="od_k1_angle">K1 (Angle)</Label>
+                  <Input id="od_k1_angle" value={formData.od_k1_angle} onChange={handleChange} />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="od_k2">K2</Label>
-                <Input id="od_k2" value={formData.od_k2} onChange={handleChange} />
+              {/* K2 Fields */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label htmlFor="od_k2_radius">K2 (Radius)</Label>
+                  <Input id="od_k2_radius" value={formData.od_k2_radius} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="od_k2_power">K2 (Power)</Label>
+                  <Input id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="od_k2_angle">K2 (Angle)</Label>
+                  <Input id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} />
+                </div>
               </div>
               <div>
                 <Label htmlFor="od_tbut_schirmer">TBUT/SCHIRMER</Label>
@@ -209,13 +245,35 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
                 <Label htmlFor="os_cc_bcva">CC & BCVA</Label>
                 <Input id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} />
               </div>
-              <div>
-                <Label htmlFor="os_k1">K1</Label>
-                <Input id="os_k1" value={formData.os_k1} onChange={handleChange} />
+              {/* K1 Fields */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label htmlFor="os_k1_radius">K1 (Radius)</Label>
+                  <Input id="os_k1_radius" value={formData.os_k1_radius} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="os_k1_power">K1 (Power)</Label>
+                  <Input id="os_k1_power" value={formData.os_k1_power} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="os_k1_angle">K1 (Angle)</Label>
+                  <Input id="os_k1_angle" value={formData.os_k1_angle} onChange={handleChange} />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="os_k2">K2</Label>
-                <Input id="os_k2" value={formData.os_k2} onChange={handleChange} />
+              {/* K2 Fields */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label htmlFor="os_k2_radius">K2 (Radius)</Label>
+                  <Input id="os_k2_radius" value={formData.os_k2_radius} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="os_k2_power">K2 (Power)</Label>
+                  <Input id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} />
+                </div>
+                <div>
+                  <Label htmlFor="os_k2_angle">K2 (Angle)</Label>
+                  <Input id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} />
+                </div>
               </div>
               <div>
                 <Label htmlFor="os_tbut_schirmer">TBUT/SCHIRMER</Label>
