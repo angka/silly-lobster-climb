@@ -285,7 +285,7 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
 
   // Calculate total patients for each category
   const totalAllPatients = patients.length;
-  const totalRGP Patients = patients.filter(p => p.lensCategory === 'RGP').length;
+  const totalRGPPatients = patients.filter(p => p.lensCategory === 'RGP').length;
   const totalScleralLensPatients = patients.filter(p => p.lensCategory === 'Scleral lens').length;
 
   const getCategoryCount = () => {
