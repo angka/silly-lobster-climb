@@ -8,6 +8,8 @@ import { Trash2 } from 'lucide-react'; // Import Trash2 icon
 
 export interface SingleFittingProcedureData {
   id: string; // Added for unique identification in lists
+  leading_base_curve: string; // New field
+  real_base_curve: string; // New field
   lens_name: string;
   base_curve: string;
   diameter: string;
@@ -47,6 +49,14 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
             <Trash2 className="h-4 w-4 mr-2" /> Delete
           </Button>
         )}
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_leading_base_curve`}>Leading Base Curve</Label>
+        <Input id={`${eye.toLowerCase()}_leading_base_curve`} value={data.leading_base_curve} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor={`${eye.toLowerCase()}_real_base_curve`}>Real Base Curve</Label>
+        <Input id={`${eye.toLowerCase()}_real_base_curve`} value={data.real_base_curve} onChange={handleChange} />
       </div>
       <div>
         <Label htmlFor={`${eye.toLowerCase()}_lens_name`}>Lens Name</Label>
