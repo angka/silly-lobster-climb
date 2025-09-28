@@ -12,6 +12,7 @@ import { FittingSessionFormData } from '@/components/FittingSessionForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import FollowUpSessionForm, { FollowUpSessionFormData } from '@/components/FollowUpSessionForm'; // Import new form
+import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm'; // Import RGPFittingSessionFormData
 
 interface Patient extends PatientFormData {
   id: string;
@@ -24,7 +25,17 @@ interface Session {
   type: 'Fitting' | 'Follow-up';
   lensType?: 'ROSE_K2_XL' | 'RGP'; // Add lensType to session
   date: Date;
-  data: FittingSessionFormData | FollowUpSessionFormData | any; // 'any' for RGP until its form is fully defined
+  data: FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData;
+}
+
+// Define a specific interface for RGP fitting sessions to be passed to FollowUpSessionForm
+interface PreviousRGPFittingSessionForForm {
+  id: string;
+  patientId: string;
+  type: 'Fitting';
+  lensType: 'RGP';
+  date: Date;
+  data: RGPFittingSessionFormData;
 }
 
 const PatientDetailsPage: React.FC = () => {
@@ -34,11 +45,12 @@ const PatientDetailsPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
   const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false);
-  const [isFittingLensTypeSelectionOpen, setIsFittingLensTypeSelectionOpen] = useState(false); // Renamed for clarity
+  const [isFittingLensTypeSelectionOpen, setIsFittingLensTypeSelectionOpen] = useState(false);
   const [isFollowUpSessionDialogOpen, setIsFollowUpSessionDialogOpen] = useState(false);
-  const [isFollowUpLensTypeSelectionOpen, setIsFollowUpLensTypeSelectionOpen] = useState(false); // New state for follow-up lens type selection
-  const [selectedFollowUpLensType, setSelectedFollowUpLensType] = useState<'ROSE_K2_XL' | 'RGP' | undefined>(undefined); // New state to store selected lens type for follow-up
-  const [editingFollowUpSession, setEditingFollowUpSession] = useState<FollowUpSessionFormData & { id: string, lensType?: 'ROSE_K2_XL' | 'RGP' } | null>(null); // State for editing follow-up
+  const [isFollowUpLensTypeSelectionOpen, setIsFollowUpLensTypeSelectionOpen] = useState(false);
+  const [selectedFollowUpLensType, setSelectedFollowUpLensType] = useState<'ROSE_K2_XL' | 'RGP' | undefined>(undefined);
+  const [editingFollowUpSession, setEditingFollowUpSession] = useState<FollowUpSessionFormData & { id: string, lensType?: 'ROSE_K2_XL' | 'RGP' } | null>(null);
+  const [previousRGPFittingSessionsForForm, setPreviousRGPFittingSessionsForForm] = useState<PreviousRGPFittingSessionForForm[]>([]); // New state for RGP fitting sessions
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -69,6 +81,13 @@ const PatientDetailsPage: React.FC = () => {
       }));
       const patientSessions = allSessions.filter(s => s.patientId === id);
       setSessions(patientSessions.sort((a, b) => b.date.getTime() - a.date.getTime()));
+
+      // Filter for RGP fitting sessions for the current patient to pass to FollowUpSessionForm
+      const rgpFittingSessions = allSessions.filter(
+        (s): s is PreviousRGPFittingSessionForForm =>
+          s.patientId === id && s.type === 'Fitting' && s.lensType === 'RGP'
+      );
+      setPreviousRGPFittingSessionsForForm(rgpFittingSessions);
     }
   }, [id, navigate]);
 
@@ -387,14 +406,15 @@ const PatientDetailsPage: React.FC = () => {
             <FollowUpSessionForm
               patientName={patient.name}
               medicalRecordNumber={patient.medicalRecordNumber}
-              lensType={selectedFollowUpLensType || editingFollowUpSession?.lensType} // Pass selected lens type
+              lensType={selectedFollowUpLensType || editingFollowUpSession?.lensType}
               initialData={editingFollowUpSession || undefined}
               onSubmit={handleSaveFollowUpSession}
               onCancel={() => {
                 setIsFollowUpSessionDialogOpen(false);
                 setEditingFollowUpSession(null);
-                setSelectedFollowUpLensType(undefined); // Clear selected lens type on cancel
+                setSelectedFollowUpLensType(undefined);
               }}
+              previousRGPFittingSessions={previousRGPFittingSessionsForForm} {/* Pass the sessions here */}
             />
           )}
         </DialogContent>
