@@ -10,8 +10,8 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import FittingProcedurePanel from './FittingProcedurePanel';
-import { SingleFittingProcedureData } from './SingleFittingProcedureForm';
+import RoseK2XLFittingProcedurePanel from './RoseK2XLFittingProcedurePanel'; // Import new panel
+import { SingleRoseK2XLFittingProcedureData } from './SingleRoseK2XLFittingProcedureForm'; // Import new data type
 
 // Define the structure for the fitting session data
 export interface FittingSessionFormData {
@@ -45,9 +45,9 @@ export interface FittingSessionFormData {
   os_pentacam: string; // Merged field
   os_orbscan: string; // Merged field
 
-  // Fitting Procedures (now arrays of objects)
-  odProcedures: SingleFittingProcedureData[];
-  osProcedures: SingleFittingProcedureData[];
+  // Fitting Procedures (now arrays of objects using the new type)
+  odProcedures: SingleRoseK2XLFittingProcedureData[];
+  osProcedures: SingleRoseK2XLFittingProcedureData[];
 }
 
 interface FittingSessionFormProps {
@@ -245,11 +245,11 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     }
   };
 
-  const handleUpdateODProcedures = (updatedProcedures: SingleFittingProcedureData[]) => {
+  const handleUpdateODProcedures = (updatedProcedures: SingleRoseK2XLFittingProcedureData[]) => {
     setFormData(prev => ({ ...prev, odProcedures: updatedProcedures }));
   };
 
-  const handleUpdateOSProcedures = (updatedProcedures: SingleFittingProcedureData[]) => {
+  const handleUpdateOSProcedures = (updatedProcedures: SingleRoseK2XLFittingProcedureData[]) => {
     setFormData(prev => ({ ...prev, osProcedures: updatedProcedures }));
   };
 
@@ -430,14 +430,14 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Fitting Procedure - Left Column (OD) */}
-          <FittingProcedurePanel
+          <RoseK2XLFittingProcedurePanel // Use new panel
             eye="OD"
             procedures={formData.odProcedures}
             onUpdateProcedures={handleUpdateODProcedures}
           />
 
           {/* Fitting Procedure - Right Column (OS) */}
-          <FittingProcedurePanel
+          <RoseK2XLFittingProcedurePanel // Use new panel
             eye="OS"
             procedures={formData.osProcedures}
             onUpdateProcedures={handleUpdateOSProcedures}
