@@ -10,9 +10,27 @@ import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
 import PatientCategoryTabs from '@/components/PatientCategoryTabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { FittingSessionFormData } from '@/components/FittingSessionForm';
+import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm';
+import { FollowUpSessionFormData } from '@/components/FollowUpSessionForm';
 
 interface Patient extends PatientFormData {
   id: string;
+}
+
+interface Session {
+  id: string;
+  patientId: string;
+  type: 'Fitting' | 'Follow-up';
+  lensType?: 'ROSE_K2_XL' | 'RGP';
+  date: Date;
+  data: FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData;
+}
+
+// Define the structure for the combined export/import data
+interface PatientBackupData {
+  patient: Patient;
+  sessions: Session[];
 }
 
 // Helper function to parse a single CSV row, handling quoted fields
@@ -27,7 +45,7 @@ const parseCsvRow = (row: string): string[] => {
   });
 };
 
-const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogout
+const DashboardPage: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'RGP' | 'Scleral lens'>('All');
@@ -37,8 +55,8 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fileInputJsonRef = useRef<HTMLInputElement>(null); // For JSON import
-  const fileInputCsvRef = useRef<HTMLInputElement>(null); // For CSV import
+  const fileInputJsonRef = useRef<HTMLInputElement>(null);
+  const fileInputCsvRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const storedPatients = localStorage.getItem('patients');
@@ -82,29 +100,58 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
 
   const handleDeletePatient = () => {
     if (patientToDelete) {
+      // Also delete associated sessions
+      const storedSessions = localStorage.getItem('sessions');
+      if (storedSessions) {
+        let existingSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
+          ...s,
+          date: new Date(s.date),
+        }));
+        existingSessions = existingSessions.filter(s => s.patientId !== patientToDelete.id);
+        localStorage.setItem('sessions', JSON.stringify(existingSessions));
+      }
+
       setPatients((prevPatients) =>
         prevPatients.filter((p) => p.id !== patientToDelete.id)
       );
       setIsDeleteDialogOpen(false);
       setPatientToDelete(null);
-      showSuccess('Patient deleted successfully!');
+      showSuccess('Patient and all associated sessions deleted successfully!');
     }
   };
 
   const handleExportPatients = () => {
     try {
-      const data = localStorage.getItem('patients');
-      if (data) {
-        const blob = new Blob([data], { type: 'application/json' });
+      const storedPatients = localStorage.getItem('patients');
+      const storedSessions = localStorage.getItem('sessions');
+
+      const allPatients: Patient[] = storedPatients ? JSON.parse(storedPatients).map((p: Patient) => ({
+        ...p,
+        dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
+        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
+      })) : [];
+
+      const allSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
+        ...s,
+        date: new Date(s.date),
+      })) : [];
+
+      const backupData: PatientBackupData[] = allPatients.map(patient => ({
+        patient: patient,
+        sessions: allSessions.filter(session => session.patientId === patient.id),
+      }));
+
+      if (backupData.length > 0) {
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `patients_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `patients_and_sessions_backup_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showSuccess('Patient data exported to JSON successfully!');
+        showSuccess('All patient and session data exported to JSON successfully!');
       } else {
         showError('No patient data found to export.');
       }
@@ -174,26 +221,47 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const importedData: Patient[] = JSON.parse(content);
+        const importedBackupData: PatientBackupData[] = JSON.parse(content);
 
-        // Basic validation for imported data structure
-        if (!Array.isArray(importedData) || !importedData.every(p => p.id && p.name && p.medicalRecordNumber)) {
-          showError('Invalid file format. Please upload a valid patient JSON file.');
+        if (!Array.isArray(importedBackupData) || !importedBackupData.every(item => item.patient && item.sessions !== undefined)) {
+          showError('Invalid file format. Please upload a valid patient and session JSON backup file.');
           return;
         }
 
-        // Convert date strings back to Date objects
-        const patientsWithDates = importedData.map(p => ({
-          ...p,
-          dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
-          dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
-        }));
+        const allImportedPatients: Patient[] = [];
+        const allImportedSessions: Session[] = [];
 
-        setPatients(patientsWithDates);
-        showSuccess('Patient data imported successfully!');
+        importedBackupData.forEach(item => {
+          // Process patient data
+          const patient: Patient = {
+            ...item.patient,
+            dateOfBirth: item.patient.dateOfBirth ? new Date(item.patient.dateOfBirth) : undefined,
+            dateOfVisit: item.patient.dateOfVisit ? new Date(item.patient.dateOfVisit) : undefined,
+          };
+          allImportedPatients.push(patient);
+
+          // Process sessions data
+          item.sessions.forEach((session: Session) => {
+            const processedSession: Session = {
+              ...session,
+              date: new Date(session.date),
+              // Ensure nested dates within data are also converted if they exist
+              data: {
+                ...session.data,
+                date: new Date(session.data.date), // Assuming session.data also has a date field
+              } as FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData,
+            };
+            allImportedSessions.push(processedSession);
+          });
+        });
+
+        localStorage.setItem('patients', JSON.stringify(allImportedPatients));
+        localStorage.setItem('sessions', JSON.stringify(allImportedSessions));
+        setPatients(allImportedPatients); // Update state to reflect imported patients
+        showSuccess('Patient and session data imported successfully!');
       } catch (error) {
         console.error('Failed to import patient data:', error);
-        showError('Failed to import patient data. Please ensure it is a valid JSON file.');
+        showError('Failed to import patient and session data. Please ensure it is a valid JSON file.');
       }
     };
     reader.readAsText(file);
@@ -278,12 +346,11 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
     const matchesSearch = searchQuery.toLowerCase() === '' ||
                           patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           patient.medicalRecordNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (patient.diagnosis && patient.diagnosis.toLowerCase().includes(searchQuery.toLowerCase())); // Search by diagnosis
+                          (patient.diagnosis && patient.diagnosis.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchesCategory && matchesSearch;
   });
 
-  // Calculate total patients for each category
   const totalAllPatients = patients.length;
   const totalRGPPatients = patients.filter(p => p.lensCategory === 'RGP').length;
   const totalScleralLensPatients = patients.filter(p => p.lensCategory === 'Scleral lens').length;
@@ -302,21 +369,19 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
   };
 
   return (
-    <Layout> {/* Removed showLogout and onLogout props */}
+    <Layout>
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Left Panel for Tabs */}
         <div className="md:w-1/4 lg:w-1/5 p-4 bg-card rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Categories</h2>
           <PatientCategoryTabs currentCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
         </div>
 
-        {/* Right Panel for Patient List */}
         <div className="md:w-3/4 lg:w-4/5">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">
               Patient List ({selectedCategory}) <span className="text-muted-foreground text-2xl">({getCategoryCount()})</span>
             </h1>
-            <div className="flex space-x-2"> {/* Group buttons */}
+            <div className="flex space-x-2">
               <Button onClick={handleExportPatients} variant="outline">
                 <Download className="mr-2 h-4 w-4" /> Export JSON
               </Button>
@@ -359,7 +424,6 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
             </div>
           </div>
 
-          {/* Search Bar */}
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -377,7 +441,7 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>MRN</TableHead>
-                  <TableHead>Diagnosis</TableHead> {/* New column */}
+                  <TableHead>Diagnosis</TableHead>
                   <TableHead>Lens Category</TableHead>
                   <TableHead>Date of Visit</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -399,7 +463,7 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
                         </Link>
                       </TableCell>
                       <TableCell>{patient.medicalRecordNumber}</TableCell>
-                      <TableCell>{patient.diagnosis || 'N/A'}</TableCell> {/* Display diagnosis */}
+                      <TableCell>{patient.diagnosis || 'N/A'}</TableCell>
                       <TableCell>{patient.lensCategory || 'N/A'}</TableCell>
                       <TableCell>{patient.dateOfVisit ? patient.dateOfVisit.toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell className="text-right">
@@ -437,7 +501,6 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
         </div>
       </div>
 
-      {/* Edit Patient Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -456,7 +519,6 @@ const DashboardPage: React.FC = () => { // Removed DashboardPageProps and onLogo
         </DialogContent>
       </Dialog>
 
-      {/* Delete Patient Alert Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
