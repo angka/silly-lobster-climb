@@ -15,6 +15,7 @@ import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm';
 import { FollowUpSessionFormData } from '@/components/FollowUpSessionForm';
 import FollowUpCalendar from '@/components/FollowUpCalendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 
 interface Patient extends PatientFormData {
   id: string;
