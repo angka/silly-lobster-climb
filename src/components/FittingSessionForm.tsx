@@ -2,50 +2,45 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea'; // Ensure Textarea is imported
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import RoseK2XLFittingProcedurePanel from './RoseK2XLFittingProcedurePanel'; // Import new panel
-import { SingleRoseK2XLFittingProcedureData } from './SingleRoseK2XLFittingProcedureForm'; // Import new data type
+import RoseK2XLFittingProcedurePanel from './RoseK2XLFittingProcedurePanel';
+import { SingleRoseK2XLFittingProcedureData } from './SingleRoseK2XLFittingProcedureForm';
 
-// Define the structure for the fitting session data
 export interface FittingSessionFormData {
-  // Patient Info (for display, not direct input on this form)
   patientName: string;
   medicalRecordNumber: string;
-  date: Date; // New field for the session date
-  diagnosis?: string; // New field for diagnosis
+  date: Date;
+  diagnosis?: string;
+  nextFollowUpDate?: Date; // New field
 
-  // OD (Right Eye)
   od_ucva: string;
   od_cc_bcva: string;
   od_k1: string;
   od_k2: string;
-  od_mean_k_radius: string; // New field for Mean K Radius
-  od_mean_k_power: string;  // New field for Mean K Power
+  od_mean_k_radius: string;
+  od_mean_k_power: string;
   od_kmax: string;
   od_tbut_schirmer: string;
-  od_pentacam: string; // Merged field
-  od_orbscan: string; // Merged field
+  od_pentacam: string;
+  od_orbscan: string;
 
-  // OS (Left Eye)
   os_ucva: string;
   os_cc_bcva: string;
   os_k1: string;
   os_k2: string;
-  os_mean_k_radius: string; // New field for Mean K Radius
-  os_mean_k_power: string;  // New field for Mean K Power
+  os_mean_k_radius: string;
+  os_mean_k_power: string;
   os_kmax: string;
   os_tbut_schirmer: string;
-  os_pentacam: string; // Merged field
-  os_orbscan: string; // Merged field
+  os_pentacam: string;
+  os_orbscan: string;
 
-  // Fitting Procedures (now arrays of objects using the new type)
   odProcedures: SingleRoseK2XLFittingProcedureData[];
   osProcedures: SingleRoseK2XLFittingProcedureData[];
 }
@@ -54,13 +49,12 @@ interface FittingSessionFormProps {
   patientName: string;
   medicalRecordNumber: string;
   dateOfBirth?: Date;
-  diagnosis?: string; // Added diagnosis prop
+  diagnosis?: string;
   initialData?: FittingSessionFormData;
   onSubmit: (data: FittingSessionFormData) => void;
   onCancel: () => void;
 }
 
-// Helper function to calculate age
 const calculateAge = (dob?: Date): number | null => {
   if (!dob) return null;
   const today = new Date();
@@ -73,7 +67,6 @@ const calculateAge = (dob?: Date): number | null => {
   return age;
 };
 
-// Interface for all trial lens recommendations
 interface TrialLensRecommendations {
   keratoconus: string;
   pmdKeratoglobus: string;
@@ -85,7 +78,7 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
   patientName,
   medicalRecordNumber,
   dateOfBirth,
-  diagnosis, // Destructure diagnosis
+  diagnosis,
   initialData,
   onSubmit,
   onCancel,
@@ -95,7 +88,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
       date: new Date(),
-      diagnosis: diagnosis, // Initialize diagnosis
+      diagnosis: diagnosis,
+      nextFollowUpDate: undefined,
       od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k_radius: '', od_mean_k_power: '', od_kmax: '',
       od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '',
       os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k_radius: '', os_mean_k_power: '', os_kmax: '',
@@ -105,22 +99,14 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     }
   );
 
-  // State to track if radius was auto-filled or manually set
   const [isOdRadiusAutoFilled, setIsOdRadiusAutoFilled] = useState(false);
   const [isOsRadiusAutoFilled, setIsOsRadiusAutoFilled] = useState(false);
 
-  // State for all trial lens recommendations
   const [odTrialLensRecommendations, setOdTrialLensRecommendations] = useState<TrialLensRecommendations>({
-    keratoconus: 'N/A',
-    pmdKeratoglobus: 'N/A',
-    postGraft: 'N/A',
-    postLasik: 'N/A',
+    keratoconus: 'N/A', pmdKeratoglobus: 'N/A', postGraft: 'N/A', postLasik: 'N/A',
   });
   const [osTrialLensRecommendations, setOsTrialLensRecommendations] = useState<TrialLensRecommendations>({
-    keratoconus: 'N/A',
-    pmdKeratoglobus: 'N/A',
-    postGraft: 'N/A',
-    postLasik: 'N/A',
+    keratoconus: 'N/A', pmdKeratoglobus: 'N/A', postGraft: 'N/A', postLasik: 'N/A',
   });
 
   useEffect(() => {
@@ -129,102 +115,57 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
       date: initialData?.date || new Date(),
-      diagnosis: diagnosis, // Update diagnosis if prop changes
+      diagnosis: diagnosis,
+      nextFollowUpDate: initialData?.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined,
       ...initialData,
       odProcedures: initialData?.odProcedures || [],
       osProcedures: initialData?.osProcedures || [],
     }));
-    // Reset auto-filled flags when initialData changes
     setIsOdRadiusAutoFilled(false);
     setIsOsRadiusAutoFilled(false);
   }, [patientName, medicalRecordNumber, initialData, diagnosis]);
 
-  // Helper function to calculate ALL trial lens recommendations
   const calculateAllTrialLensRecommendations = (meanKRadius: string): TrialLensRecommendations => {
     const radius = parseFloat(meanKRadius);
     if (isNaN(radius) || radius <= 0) {
-      return {
-        keratoconus: 'N/A',
-        pmdKeratoglobus: 'N/A',
-        postGraft: 'N/A',
-        postLasik: 'N/A',
-      };
+      return { keratoconus: 'N/A', pmdKeratoglobus: 'N/A', postGraft: 'N/A', postLasik: 'N/A' };
     }
 
     let keratoconusValue: string;
-    if (radius === 7.4) {
-      keratoconusValue = radius.toFixed(2);
-    } else if (radius < 7.4) {
-      const x = (7.4 - radius) / 2;
-      keratoconusValue = (radius + x).toFixed(2);
-    } else { // radius > 7.4
-      const y = (radius - 7.4) / 2;
-      keratoconusValue = (radius - y).toFixed(2);
-    }
-
-    const pmdKeratoglobusValue = (radius - 0.6).toFixed(2);
-    const postGraftValue = (radius - 0.7).toFixed(2);
-    const postLasikValue = (radius - 0.7).toFixed(2); // Assuming post lasik is same as post graft
+    if (radius === 7.4) keratoconusValue = radius.toFixed(2);
+    else if (radius < 7.4) keratoconusValue = (radius + (7.4 - radius) / 2).toFixed(2);
+    else keratoconusValue = (radius - (radius - 7.4) / 2).toFixed(2);
 
     return {
       keratoconus: keratoconusValue,
-      pmdKeratoglobus: pmdKeratoglobusValue,
-      postGraft: postGraftValue,
-      postLasik: postLasikValue,
+      pmdKeratoglobus: (radius - 0.6).toFixed(2),
+      postGraft: (radius - 0.7).toFixed(2),
+      postLasik: (radius - 0.7).toFixed(2),
     };
   };
 
-  // Effect for OD Mean K calculation
   useEffect(() => {
     const power = parseFloat(formData.od_mean_k_power);
     if (!isNaN(power) && power !== 0) {
       const calculatedRadius = (337.5 / power).toFixed(2);
-      setFormData(prev => {
-        // Only update if radius is empty or was previously auto-filled
-        if (prev.od_mean_k_radius === '' || isOdRadiusAutoFilled) {
-          setIsOdRadiusAutoFilled(true);
-          return { ...prev, od_mean_k_radius: calculatedRadius };
-        }
-        return prev; // Don't overwrite manual input
-      });
-    } else if (formData.od_mean_k_power === '') {
-      setFormData(prev => {
-        // If power is cleared, clear radius only if it was auto-filled
-        if (isOdRadiusAutoFilled) {
-          setIsOdRadiusAutoFilled(false);
-          return { ...prev, od_mean_k_radius: '' };
-        }
-        return prev; // Don't clear manual input
-      });
+      if (formData.od_mean_k_radius === '' || isOdRadiusAutoFilled) {
+        setIsOdRadiusAutoFilled(true);
+        setFormData(prev => ({ ...prev, od_mean_k_radius: calculatedRadius }));
+      }
     }
   }, [formData.od_mean_k_power, isOdRadiusAutoFilled]);
 
-  // Effect for OS Mean K calculation
   useEffect(() => {
     const power = parseFloat(formData.os_mean_k_power);
     if (!isNaN(power) && power !== 0) {
       const calculatedRadius = (337.5 / power).toFixed(2);
-      setFormData(prev => {
-        // Only update if radius is empty or was previously auto-filled
-        if (prev.os_mean_k_radius === '' || isOsRadiusAutoFilled) {
-          setIsOsRadiusAutoFilled(true);
-          return { ...prev, os_mean_k_radius: calculatedRadius };
-        }
-        return prev; // Don't overwrite manual input
-      });
-    } else if (formData.os_mean_k_power === '') {
-      setFormData(prev => {
-        // If power is cleared, clear radius only if it was auto-filled
-        if (isOsRadiusAutoFilled) {
-          setIsOsRadiusAutoFilled(false);
-          return { ...prev, os_mean_k_radius: '' };
-        }
-        return prev; // Don't clear manual input
-      });
+      if (formData.os_mean_k_radius === '' || isOsRadiusAutoFilled) {
+        setIsOsRadiusAutoFilled(true);
+        setFormData(prev => ({ ...prev, os_mean_k_radius: calculatedRadius }));
+      }
     }
   }, [formData.os_mean_k_power, isOsRadiusAutoFilled]);
 
-  // Effect to update all trial lens recommendations when radius changes
   useEffect(() => {
     setOdTrialLensRecommendations(calculateAllTrialLensRecommendations(formData.od_mean_k_radius));
   }, [formData.od_mean_k_radius]);
@@ -236,13 +177,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-
-    // If user manually types into a radius field, mark it as not auto-filled
-    if (id === 'od_mean_k_radius') {
-      setIsOdRadiusAutoFilled(false);
-    } else if (id === 'os_mean_k_radius') {
-      setIsOsRadiusAutoFilled(false);
-    }
+    if (id === 'od_mean_k_radius') setIsOdRadiusAutoFilled(false);
+    else if (id === 'os_mean_k_radius') setIsOsRadiusAutoFilled(false);
   };
 
   const handleUpdateODProcedures = (updatedProcedures: SingleRoseK2XLFittingProcedureData[]) => {
@@ -275,149 +211,76 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Date of Session */}
-          <div className="md:col-span-2">
+          <div>
             <Label htmlFor="date">Date of Session</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.date && "text-muted-foreground"
-                  )}
-                >
+                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.date && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.date}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, date: date || new Date() }))}
-                  initialFocus
-                />
+                <Calendar mode="single" selected={formData.date} onSelect={(date) => setFormData(prev => ({ ...prev, date: date || new Date() }))} initialFocus />
               </PopoverContent>
             </Popover>
           </div>
 
-          {/* OD (Right Eye) Section */}
+          <div>
+            <Label htmlFor="nextFollowUpDate">Next Follow-up Schedule</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.nextFollowUpDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.nextFollowUpDate ? format(formData.nextFollowUpDate, "PPP") : <span>Schedule next visit</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" selected={formData.nextFollowUpDate} onSelect={(date) => setFormData(prev => ({ ...prev, nextFollowUpDate: date }))} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <div>
             <h3 className="text-lg font-semibold mb-4">OD (Right Eye)</h3>
             <div className="space-y-3">
-              <div>
-                <Label htmlFor="od_ucva">UCVA</Label>
-                <Input id="od_ucva" value={formData.od_ucva} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="od_cc_bcva">CC & BCVA</Label>
-                <Input id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="od_k1">K1</Label>
-                <Input id="od_k1" value={formData.od_k1} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="od_k2">K2</Label>
-                <Input id="od_k2" value={formData.od_k2} onChange={handleChange} />
-              </div>
-              {/* MEAN K - Radius and Power */}
+              <div><Label htmlFor="od_ucva">UCVA</Label><Input id="od_ucva" value={formData.od_ucva} onChange={handleChange} /></div>
+              <div><Label htmlFor="od_cc_bcva">CC & BCVA</Label><Input id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
+              <div><Label htmlFor="od_k1">K1</Label><Input id="od_k1" value={formData.od_k1} onChange={handleChange} /></div>
+              <div><Label htmlFor="od_k2">K2</Label><Input id="od_k2" value={formData.od_k2} onChange={handleChange} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="od_mean_k_radius">MEAN K (Radius)</Label>
-                  <Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label htmlFor="od_mean_k_power">MEAN K (Power)</Label>
-                  <Input id="od_mean_k_power" value={formData.od_mean_k_power} onChange={handleChange} />
-                </div>
+                <div><Label htmlFor="od_mean_k_radius">MEAN K (Radius)</Label><Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} /></div>
+                <div><Label htmlFor="od_mean_k_power">MEAN K (Power)</Label><Input id="od_mean_k_power" value={formData.od_mean_k_power} onChange={handleChange} /></div>
               </div>
+              <div><Label htmlFor="od_kmax">KMAX</Label><Input id="od_kmax" value={formData.od_kmax} onChange={handleChange} /></div>
+              <div><Label htmlFor="od_tbut_schirmer">TBUT/SCHIRMER</Label><Input id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
+              <div><Label htmlFor="od_pentacam">PENTACAM</Label><Input id="od_pentacam" value={formData.od_pentacam} onChange={handleChange} /></div>
+              <div><Label htmlFor="od_orbscan">ORBSCAN</Label><Input id="od_orbscan" value={formData.od_orbscan} onChange={handleChange} /></div>
               <div>
-                <Label htmlFor="od_kmax">KMAX</Label>
-                <Input id="od_kmax" value={formData.od_kmax} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="od_tbut_schirmer">TBUT/SCHIRMER</Label>
-                <Input id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="od_pentacam">PENTACAM (Elevation map / CCT)</Label>
-                <Input id="od_pentacam" value={formData.od_pentacam} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
-              </div>
-              <div>
-                <Label htmlFor="od_orbscan">ORBSCAN (Elevation map / CCT)</Label>
-                <Input id="od_orbscan" value={formData.od_orbscan} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
-              </div>
-              {/* First Trial Lens Recommendation */}
-              <div>
-                <Label htmlFor="od_trial_lens_recommendation">First Trial Lens Recommendation</Label>
-                <Textarea
-                  id="od_trial_lens_recommendation"
-                  value={`Keratoconus: ${odTrialLensRecommendations.keratoconus}\nPMD/Keratoglobus: ${odTrialLensRecommendations.pmdKeratoglobus}\nPost Graft: ${odTrialLensRecommendations.postGraft}\nPost Lasik: ${odTrialLensRecommendations.postLasik}`}
-                  readOnly
-                  className="bg-muted min-h-[120px]"
-                />
+                <Label>First Trial Lens Recommendation</Label>
+                <Textarea readOnly className="bg-muted min-h-[100px] text-xs" value={`Keratoconus: ${odTrialLensRecommendations.keratoconus}\nPMD/Keratoglobus: ${odTrialLensRecommendations.pmdKeratoglobus}\nPost Graft: ${odTrialLensRecommendations.postGraft}\nPost Lasik: ${odTrialLensRecommendations.postLasik}`} />
               </div>
             </div>
           </div>
 
-          {/* OS (Left Eye) Section */}
           <div>
             <h3 className="text-lg font-semibold mb-4">OS (Left Eye)</h3>
             <div className="space-y-3">
-              <div>
-                <Label htmlFor="os_ucva">UCVA</Label>
-                <Input id="os_ucva" value={formData.os_ucva} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="os_cc_bcva">CC & BCVA</Label>
-                <Input id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="os_k1">K1</Label>
-                <Input id="os_k1" value={formData.os_k1} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="os_k2">K2</Label>
-                <Input id="os_k2" value={formData.os_k2} onChange={handleChange} />
-              </div>
-              {/* MEAN K - Radius and Power */}
+              <div><Label htmlFor="os_ucva">UCVA</Label><Input id="os_ucva" value={formData.os_ucva} onChange={handleChange} /></div>
+              <div><Label htmlFor="os_cc_bcva">CC & BCVA</Label><Input id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
+              <div><Label htmlFor="os_k1">K1</Label><Input id="os_k1" value={formData.os_k1} onChange={handleChange} /></div>
+              <div><Label htmlFor="os_k2">K2</Label><Input id="os_k2" value={formData.os_k2} onChange={handleChange} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="os_mean_k_radius">MEAN K (Radius)</Label>
-                  <Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label htmlFor="os_mean_k_power">MEAN K (Power)</Label>
-                  <Input id="os_mean_k_power" value={formData.os_mean_k_power} onChange={handleChange} />
-                </div>
+                <div><Label htmlFor="os_mean_k_radius">MEAN K (Radius)</Label><Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} /></div>
+                <div><Label htmlFor="os_mean_k_power">MEAN K (Power)</Label><Input id="os_mean_k_power" value={formData.os_mean_k_power} onChange={handleChange} /></div>
               </div>
+              <div><Label htmlFor="os_kmax">KMAX</Label><Input id="os_kmax" value={formData.os_kmax} onChange={handleChange} /></div>
+              <div><Label htmlFor="os_tbut_schirmer">TBUT/SCHIRMER</Label><Input id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
+              <div><Label htmlFor="os_pentacam">PENTACAM</Label><Input id="os_pentacam" value={formData.os_pentacam} onChange={handleChange} /></div>
+              <div><Label htmlFor="os_orbscan">ORBSCAN</Label><Input id="os_orbscan" value={formData.os_orbscan} onChange={handleChange} /></div>
               <div>
-                <Label htmlFor="os_kmax">KMAX</Label>
-                <Input id="os_kmax" value={formData.os_kmax} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="os_tbut_schirmer">TBUT/SCHIRMER</Label>
-                <Input id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} />
-              </div>
-              <div>
-                <Label htmlFor="os_pentacam">PENTACAM (Elevation map / CCT)</Label>
-                <Input id="os_pentacam" value={formData.os_pentacam} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
-              </div>
-              <div>
-                <Label htmlFor="os_orbscan">ORBSCAN (Elevation map / CCT)</Label>
-                <Input id="os_orbscan" value={formData.os_orbscan} onChange={handleChange} placeholder="e.g., Elevation: X, CCT: Y" />
-              </div>
-              {/* First Trial Lens Recommendation */}
-              <div>
-                <Label htmlFor="os_trial_lens_recommendation">First Trial Lens Recommendation</Label>
-                <Textarea
-                  id="os_trial_lens_recommendation"
-                  value={`Keratoconus: ${osTrialLensRecommendations.keratoconus}\nPMD/Keratoglobus: ${osTrialLensRecommendations.pmdKeratoglobus}\nPost Graft: ${osTrialLensRecommendations.postGraft}\nPost Lasik: ${osTrialLensRecommendations.postLasik}`}
-                  readOnly
-                  className="bg-muted min-h-[120px]"
-                />
+                <Label>First Trial Lens Recommendation</Label>
+                <Textarea readOnly className="bg-muted min-h-[100px] text-xs" value={`Keratoconus: ${osTrialLensRecommendations.keratoconus}\nPMD/Keratoglobus: ${osTrialLensRecommendations.pmdKeratoglobus}\nPost Graft: ${osTrialLensRecommendations.postGraft}\nPost Lasik: ${osTrialLensRecommendations.postLasik}`} />
               </div>
             </div>
           </div>
@@ -425,23 +288,10 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">FITTING PROCEDURE</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-2xl">FITTING PROCEDURE</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Fitting Procedure - Left Column (OD) */}
-          <RoseK2XLFittingProcedurePanel // Use new panel
-            eye="OD"
-            procedures={formData.odProcedures}
-            onUpdateProcedures={handleUpdateODProcedures}
-          />
-
-          {/* Fitting Procedure - Right Column (OS) */}
-          <RoseK2XLFittingProcedurePanel // Use new panel
-            eye="OS"
-            procedures={formData.osProcedures}
-            onUpdateProcedures={handleUpdateOSProcedures}
-          />
+          <RoseK2XLFittingProcedurePanel eye="OD" procedures={formData.odProcedures} onUpdateProcedures={handleUpdateODProcedures} />
+          <RoseK2XLFittingProcedurePanel eye="OS" procedures={formData.osProcedures} onUpdateProcedures={handleUpdateOSProcedures} />
         </CardContent>
       </Card>
 

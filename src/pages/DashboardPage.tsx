@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search, Download, Upload } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Search, Download, Upload, Calendar as CalendarIcon } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FittingSessionFormData } from '@/components/FittingSessionForm';
 import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm';
 import { FollowUpSessionFormData } from '@/components/FollowUpSessionForm';
+import FollowUpCalendar from '@/components/FollowUpCalendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Patient extends PatientFormData {
   id: string;
@@ -27,21 +29,19 @@ interface Session {
   data: FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData;
 }
 
-// Define the structure for the combined export/import data
 interface PatientBackupData {
   patient: Patient;
   sessions: Session[];
 }
 
-// Helper function to parse a single CSV row, handling quoted fields
 const parseCsvRow = (row: string): string[] => {
   const regex = /(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^,]*))(?:,|$)/g;
   const matches = Array.from(row.matchAll(regex));
   return matches.map(match => {
     if (match[1] !== undefined) {
-      return match[1].replace(/""/g, '"'); // Quoted field, unescape "" to "
+      return match[1].replace(/""/g, '"');
     }
-    return match[2] || ''; // Unquoted field or empty
+    return match[2] || '';
   });
 };
 
@@ -100,7 +100,6 @@ const DashboardPage: React.FC = () => {
 
   const handleDeletePatient = () => {
     if (patientToDelete) {
-      // Also delete associated sessions
       const storedSessions = localStorage.getItem('sessions');
       if (storedSessions) {
         let existingSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
@@ -174,14 +173,14 @@ const DashboardPage: React.FC = () => {
       ];
 
       const csvRows = [];
-      csvRows.push(headers.join(',')); // Add headers
+      csvRows.push(headers.join(','));
 
       for (const patient of patients) {
         const values = [
           patient.id,
-          `"${patient.name.replace(/"/g, '""')}"`, // Escape double quotes
+          `"${patient.name.replace(/"/g, '""')}"`,
           patient.medicalRecordNumber,
-          `"${(patient.diagnosis || '').replace(/"/g, '""')}"`, // New: Diagnosis
+          `"${(patient.diagnosis || '').replace(/"/g, '""')}"`,
           patient.dateOfBirth ? patient.dateOfBirth.toISOString().split('T')[0] : '',
           patient.gender || '',
           patient.contactNumber || '',
@@ -213,9 +212,7 @@ const DashboardPage: React.FC = () => {
 
   const handleImportJson = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -224,7 +221,7 @@ const DashboardPage: React.FC = () => {
         const importedBackupData: PatientBackupData[] = JSON.parse(content);
 
         if (!Array.isArray(importedBackupData) || !importedBackupData.every(item => item.patient && item.sessions !== undefined)) {
-          showError('Invalid file format. Please upload a valid patient and session JSON backup file.');
+          showError('Invalid file format.');
           return;
         }
 
@@ -232,7 +229,6 @@ const DashboardPage: React.FC = () => {
         const allImportedSessions: Session[] = [];
 
         importedBackupData.forEach(item => {
-          // Process patient data
           const patient: Patient = {
             ...item.patient,
             dateOfBirth: item.patient.dateOfBirth ? new Date(item.patient.dateOfBirth) : undefined,
@@ -240,16 +236,15 @@ const DashboardPage: React.FC = () => {
           };
           allImportedPatients.push(patient);
 
-          // Process sessions data
           item.sessions.forEach((session: Session) => {
             const processedSession: Session = {
               ...session,
               date: new Date(session.date),
-              // Ensure nested dates within data are also converted if they exist
               data: {
                 ...session.data,
-                date: new Date(session.data.date), // Assuming session.data also has a date field
-              } as FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData,
+                date: new Date(session.data.date),
+                nextFollowUpDate: session.data.nextFollowUpDate ? new Date(session.data.nextFollowUpDate) : undefined
+              } as any,
             };
             allImportedSessions.push(processedSession);
           });
@@ -257,11 +252,10 @@ const DashboardPage: React.FC = () => {
 
         localStorage.setItem('patients', JSON.stringify(allImportedPatients));
         localStorage.setItem('sessions', JSON.stringify(allImportedSessions));
-        setPatients(allImportedPatients); // Update state to reflect imported patients
-        showSuccess('Patient and session data imported successfully!');
+        setPatients(allImportedPatients);
+        showSuccess('Data imported successfully!');
       } catch (error) {
-        console.error('Failed to import patient data:', error);
-        showError('Failed to import patient and session data. Please ensure it is a valid JSON file.');
+        showError('Failed to import data.');
       }
     };
     reader.readAsText(file);
@@ -269,73 +263,54 @@ const DashboardPage: React.FC = () => {
 
   const handleImportCsv = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const lines = content.split(/\r?\n/).filter(line => line.trim() !== ''); // Split by newline and filter empty lines
+        const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
 
         if (lines.length < 1) {
-          showError('CSV file is empty or invalid.');
+          showError('CSV file is empty.');
           return;
         }
 
-        const headers = parseCsvRow(lines[0]).map(h => h.trim().replace(/\s/g, '')); // Parse header row and normalize
+        const headers = parseCsvRow(lines[0]).map(h => h.trim().replace(/\s/g, ''));
         const importedPatients: Patient[] = [];
 
         for (let i = 1; i < lines.length; i++) {
           const values = parseCsvRow(lines[i]);
-          if (values.length !== headers.length) {
-            console.warn(`Skipping row ${i + 1} due to header/value mismatch.`);
-            continue; // Skip malformed rows
-          }
+          if (values.length !== headers.length) continue;
 
           const patientData: Partial<Patient> = {};
           headers.forEach((header, index) => {
             const value = values[index].trim();
-
-            // Map CSV headers to PatientFormData keys
             switch (header) {
               case 'ID': patientData.id = value; break;
               case 'Name': patientData.name = value; break;
               case 'MedicalRecordNumber': patientData.medicalRecordNumber = value; break;
-              case 'Diagnosis': patientData.diagnosis = value; break; // New: Diagnosis
+              case 'Diagnosis': patientData.diagnosis = value; break;
               case 'DateofBirth': patientData.dateOfBirth = value ? new Date(value) : undefined; break;
-              case 'Gender': patientData.gender = value as PatientFormData['gender']; break;
+              case 'Gender': patientData.gender = value as any; break;
               case 'ContactNumber': patientData.contactNumber = value; break;
               case 'DoctorName': patientData.doctorName = value; break;
               case 'Address': patientData.address = value; break;
-              case 'LensCategory': patientData.lensCategory = value as PatientFormData['lensCategory']; break;
+              case 'LensCategory': patientData.lensCategory = value as any; break;
               case 'Notes': patientData.notes = value; break;
               case 'DateofVisit': patientData.dateOfVisit = value ? new Date(value) : undefined; break;
-              default:
-                // Ignore unknown headers
-                break;
             }
           });
 
-          // Basic validation for required fields
           if (patientData.id && patientData.name && patientData.medicalRecordNumber) {
             importedPatients.push(patientData as Patient);
-          } else {
-            console.warn(`Skipping patient due to missing required fields in row ${i + 1}: ${JSON.stringify(patientData)}`);
           }
         }
 
-        if (importedPatients.length === 0 && lines.length > 1) {
-          showError('No valid patient data found in the CSV file after parsing.');
-          return;
-        }
-
         setPatients(importedPatients);
-        showSuccess('Patient data imported from CSV successfully!');
+        showSuccess('CSV imported successfully!');
       } catch (error) {
-        console.error('Failed to import patient data from CSV:', error);
-        showError('Failed to import patient data from CSV. Please ensure it is a valid CSV file.');
+        showError('Failed to import CSV.');
       }
     };
     reader.readAsText(file);
@@ -351,67 +326,53 @@ const DashboardPage: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const totalAllPatients = patients.length;
-  const totalRGPPatients = patients.filter(p => p.lensCategory === 'RGP').length;
-  const totalScleralLensPatients = patients.filter(p => p.lensCategory === 'Scleral lens').length;
-
   const getCategoryCount = () => {
     switch (selectedCategory) {
-      case 'All':
-        return totalAllPatients;
-      case 'RGP':
-        return totalRGPPatients;
-      case 'Scleral lens':
-        return totalScleralLensPatients;
-      default:
-        return 0;
+      case 'All': return patients.length;
+      case 'RGP': return patients.filter(p => p.lensCategory === 'RGP').length;
+      case 'Scleral lens': return patients.filter(p => p.lensCategory === 'Scleral lens').length;
+      default: return 0;
     }
   };
 
   return (
     <Layout>
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="md:w-1/4 lg:w-1/5 p-4 bg-card rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Categories</h2>
-          <PatientCategoryTabs currentCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar with Categories and Calendar */}
+        <div className="lg:w-1/4 space-y-6">
+          <Card className="p-4">
+            <h2 className="text-xl font-semibold mb-4">Categories</h2>
+            <PatientCategoryTabs currentCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+          </Card>
+          
+          <FollowUpCalendar />
         </div>
 
-        <div className="md:w-3/4 lg:w-4/5">
-          <div className="flex justify-between items-center mb-6">
+        {/* Main Content */}
+        <div className="lg:w-3/4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <h1 className="text-3xl font-bold">
               Patient List ({selectedCategory}) <span className="text-muted-foreground text-2xl">({getCategoryCount()})</span>
             </h1>
-            <div className="flex space-x-2">
-              <Button onClick={handleExportPatients} variant="outline">
-                <Download className="mr-2 h-4 w-4" /> Export JSON
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleExportPatients} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" /> JSON
               </Button>
-              <Button onClick={handleExportCsv} variant="outline">
-                <Download className="mr-2 h-4 w-4" /> Export CSV
+              <Button onClick={handleExportCsv} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" /> CSV
               </Button>
-              <Input
-                type="file"
-                accept=".json"
-                ref={fileInputJsonRef}
-                onChange={handleImportJson}
-                className="hidden"
-              />
-              <Button onClick={() => fileInputJsonRef.current?.click()} variant="outline">
-                <Upload className="mr-2 h-4 w-4" /> Import JSON
+              <Input type="file" accept=".json" ref={fileInputJsonRef} onChange={handleImportJson} className="hidden" />
+              <Button onClick={() => fileInputJsonRef.current?.click()} variant="outline" size="sm">
+                <Upload className="mr-2 h-4 w-4" /> JSON
               </Button>
-              <Input
-                type="file"
-                accept=".csv"
-                ref={fileInputCsvRef}
-                onChange={handleImportCsv}
-                className="hidden"
-              />
-              <Button onClick={() => fileInputCsvRef.current?.click()} variant="outline">
-                <Upload className="mr-2 h-4 w-4" /> Import CSV
+              <Input type="file" accept=".csv" ref={fileInputCsvRef} onChange={handleImportCsv} className="hidden" />
+              <Button onClick={() => fileInputCsvRef.current?.click()} variant="outline" size="sm">
+                <Upload className="mr-2 h-4 w-4" /> CSV
               </Button>
               <Dialog open={isNewPatientDialogOpen} onOpenChange={setIsNewPatientDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Patient
+                  <Button size="sm">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Patient
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
@@ -435,7 +396,7 @@ const DashboardPage: React.FC = () => {
             />
           </div>
 
-          <div className="rounded-md border">
+          <div className="rounded-md border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -451,7 +412,7 @@ const DashboardPage: React.FC = () => {
                 {filteredPatients.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      No {selectedCategory !== 'All' ? selectedCategory + ' ' : ''}patients found. {searchQuery && `for "${searchQuery}"`}
+                      No patients found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -477,7 +438,6 @@ const DashboardPage: React.FC = () => {
                             }}
                           >
                             <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit {patient.name}</span>
                           </Button>
                           <Button
                             variant="destructive"
@@ -488,7 +448,6 @@ const DashboardPage: React.FC = () => {
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete {patient.name}</span>
                           </Button>
                         </div>
                       </TableCell>
@@ -524,9 +483,7 @@ const DashboardPage: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the patient
-              <span className="font-bold"> {patientToDelete?.name} </span>
-              and remove their data from our servers.
+              This will permanently delete <span className="font-bold">{patientToDelete?.name}</span> and all their sessions.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
