@@ -2,30 +2,34 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import PatientDetailsPage from "./pages/PatientDetailsPage";
 import FittingSessionPage from "./pages/FittingSessionPage";
-import FollowUpSessionPage from "./pages/FollowUpSessionPage"; // Import new page
-import React, { useEffect } from "react";
+import FollowUpSessionPage from "./pages/FollowUpSessionPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import { AuthProvider, useAuth } from "./components/AuthProvider";
+import React from "react";
 
 const queryClient = new QueryClient();
 
-// A simple wrapper for protected routes using local storage
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const navigate = useNavigate();
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
+  const { session, role, loading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      navigate('/login');
-    }
-  }, [isLoggedIn, navigate]);
+  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
-  return isLoggedIn ? <>{children}</> : null;
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (adminOnly && role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 const AppContent = () => {
@@ -38,6 +42,14 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdminDashboardPage />
           </ProtectedRoute>
         }
       />
@@ -65,7 +77,6 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -75,11 +86,13 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
