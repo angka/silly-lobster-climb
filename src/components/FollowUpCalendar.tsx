@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Phone, User, Activity, Eye } from 'lucide-react';
@@ -21,34 +21,41 @@ const FollowUpCalendar = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const scheduledPatients = useMemo(() => {
-    const storedPatients = localStorage.getItem('patients');
-    const storedSessions = localStorage.getItem('sessions');
-    
-    if (!storedPatients || !storedSessions) return [];
+    try {
+      const storedPatients = localStorage.getItem('patients');
+      const storedSessions = localStorage.getItem('sessions');
+      
+      if (!storedPatients || !storedSessions) return [];
 
-    const patients = JSON.parse(storedPatients);
-    const sessions = JSON.parse(storedSessions);
+      const patients = JSON.parse(storedPatients);
+      const sessions = JSON.parse(storedSessions);
 
-    const scheduled: ScheduledPatient[] = [];
+      if (!Array.isArray(patients) || !Array.isArray(sessions)) return [];
 
-    sessions.forEach((session: any) => {
-      if (session.data && session.data.nextFollowUpDate) {
-        const patient = patients.find((p: any) => p.id === session.patientId);
-        if (patient) {
-          scheduled.push({
-            id: patient.id,
-            name: patient.name,
-            phone: patient.contactNumber || 'N/A',
-            diagnosis: patient.diagnosis || 'N/A',
-            lensType: session.lensType || patient.lensCategory || 'N/A',
-            mrn: patient.medicalRecordNumber,
-            followUpDate: new Date(session.data.nextFollowUpDate)
-          });
+      const scheduled: ScheduledPatient[] = [];
+
+      sessions.forEach((session: any) => {
+        if (session && session.data && session.data.nextFollowUpDate) {
+          const patient = patients.find((p: any) => p && p.id === session.patientId);
+          if (patient) {
+            scheduled.push({
+              id: patient.id,
+              name: patient.name || 'Unknown',
+              phone: patient.contactNumber || 'N/A',
+              diagnosis: patient.diagnosis || 'N/A',
+              lensType: session.lensType || patient.lensCategory || 'N/A',
+              mrn: patient.medicalRecordNumber || 'N/A',
+              followUpDate: new Date(session.data.nextFollowUpDate)
+            });
+          }
         }
-      }
-    });
+      });
 
-    return scheduled;
+      return scheduled;
+    } catch (e) {
+      console.error("Error parsing calendar data:", e);
+      return [];
+    }
   }, []);
 
   const patientsForSelectedDate = useMemo(() => {
@@ -66,7 +73,6 @@ const FollowUpCalendar = () => {
     }
   };
 
-  // Custom day renderer to show indicators
   const modifiers = {
     hasAppointment: (date: Date) => scheduledPatients.some(p => isSameDay(p.followUpDate, date))
   };
