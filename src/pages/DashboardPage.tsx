@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search, Download, Upload, Calendar as CalendarIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Search, Download, Upload, Shield, Settings } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -14,8 +14,8 @@ import { FittingSessionFormData } from '@/components/FittingSessionForm';
 import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm';
 import { FollowUpSessionFormData } from '@/components/FollowUpSessionForm';
 import FollowUpCalendar from '@/components/FollowUpCalendar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Patient extends PatientFormData {
   id: string;
@@ -47,6 +47,7 @@ const parseCsvRow = (row: string): string[] => {
 };
 
 const DashboardPage: React.FC = () => {
+  const { role } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'RGP' | 'Scleral lens'>('All');
@@ -341,6 +342,23 @@ const DashboardPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar with Categories and Calendar */}
         <div className="lg:w-1/4 space-y-6">
+          {role === 'admin' && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" /> Admin Access
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link to="/admin">
+                  <Button className="w-full" size="sm">
+                    <Settings className="mr-2 h-4 w-4" /> Manage Users
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="p-4">
             <h2 className="text-xl font-semibold mb-4">Categories</h2>
             <PatientCategoryTabs currentCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
