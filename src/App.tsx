@@ -19,12 +19,22 @@ const queryClient = new QueryClient();
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
   const { session, role, loading } = useAuth();
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  // If we are still checking the session, show loading
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading your session...</p>
+      </div>
+    );
+  }
 
+  // If no session, redirect to login
   if (!session) {
     return <Navigate to="/login" replace />;
   }
 
+  // If admin only route and user is not admin
   if (adminOnly && role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
