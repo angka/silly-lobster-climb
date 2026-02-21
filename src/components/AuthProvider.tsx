@@ -20,16 +20,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchRole = async (userId: string) => {
     try {
-      // We use a timeout to ensure we don't get stuck forever
-      const { data, error } = await supabase
+      // Add a timeout to the role fetch to prevent endless loading
+      const rolePromise = supabase
         .from('profiles')
         .select('role, is_banned')
         .eq('id', userId)
         .single();
 
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+
+      const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
+
       if (error) {
-        console.warn("Profile not found or error fetching role:", error.message);
-        // If no profile exists yet, we default to 'user' role for now
+        console.warn("Profile fetch error:", error.message);
         setRole('user');
       } else if (data) {
         if (data.is_banned) {
@@ -37,45 +42,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           alert("Your account has been banned.");
           return;
         }
-        setRole(data.role);
+        setRole(data.role || 'user');
+      } else {
+        setRole('user');
       }
     } catch (err) {
-      console.error("Unexpected error fetching role:", err);
-      setRole('user'); // Fallback
+      console.error("Auth role check failed:", err);
+      setRole('user'); // Default to user on failure
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let mounted = true;
+
+    // Initial session check
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+
       setSession(session);
       setUser(session?.user ?? null);
+
       if (session?.user) {
-        fetchRole(session.user.id);
+        await fetchRole(session.user.id);
       } else {
         setLoading(false);
       }
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
       
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'SIGNED_IN' && newSession?.user) {
         setLoading(true);
-        await fetchRole(session.user.id);
+        await fetchRole(newSession.user.id);
       } else if (event === 'SIGNED_OUT') {
         setRole(null);
         setLoading(false);
-      } else if (event === 'INITIAL_SESSION' && !session) {
+      } else if (event === 'INITIAL_SESSION' && !newSession) {
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
