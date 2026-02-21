@@ -4,10 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { format } from 'date-fns';
-import { Shield, UserMinus, UserCheck, Ban } from 'lucide-react';
+import { Shield, UserMinus, UserCheck, Ban, UserPlus, Trash2, Loader2 } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -20,6 +24,10 @@ interface Profile {
 const AdminDashboardPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchProfiles = async () => {
     setLoading(true);
@@ -36,6 +44,43 @@ const AdminDashboardPage = () => {
   useEffect(() => {
     fetchProfiles();
   }, []);
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-manage-users', {
+        body: { action: 'create', email: newEmail, password: newPassword }
+      });
+
+      if (error) throw error;
+      
+      showSuccess('User created successfully');
+      setIsAddUserOpen(false);
+      setNewEmail('');
+      setNewPassword('');
+      fetchProfiles();
+    } catch (error: any) {
+      showError(error.message || 'Failed to create user');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('admin-manage-users', {
+        body: { action: 'delete', userId }
+      });
+
+      if (error) throw error;
+      
+      showSuccess('User deleted successfully');
+      fetchProfiles();
+    } catch (error: any) {
+      showError(error.message || 'Failed to delete user');
+    }
+  };
 
   const toggleBan = async (profile: Profile) => {
     const { error } = await supabase
@@ -67,9 +112,53 @@ const AdminDashboardPage = () => {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
-          <Shield className="h-8 w-8 text-primary" /> Admin Dashboard
-        </h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-8 w-8 text-primary" /> Admin Dashboard
+          </h1>
+          
+          <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" /> Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New User</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddUser} className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={newEmail} 
+                    onChange={(e) => setNewEmail(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    required 
+                    minLength={6}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create User
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <Card>
           <CardHeader>
@@ -87,7 +176,13 @@ const AdminDashboardPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {profiles.map((profile) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                ) : profiles.map((profile) => (
                   <TableRow key={profile.id}>
                     <TableCell>{profile.email}</TableCell>
                     <TableCell>
@@ -123,6 +218,31 @@ const AdminDashboardPage = () => {
                         >
                           <Ban className="h-4 w-4" />
                         </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete User Account?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the account for {profile.email}. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteUser(profile.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>
