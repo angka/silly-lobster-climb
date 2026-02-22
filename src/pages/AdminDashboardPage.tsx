@@ -23,7 +23,7 @@ interface Profile {
 }
 
 const AdminDashboardPage = () => {
-  const { user, refreshRole } = useAuth();
+  const { user, refreshRole, role: authRole } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -32,31 +32,42 @@ const AdminDashboardPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dbRole, setDbRole] = useState<string | null>(null);
 
-  const checkMyRole = async () => {
+  const checkMyDbRole = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    setDbRole(data?.role || 'none');
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      setDbRole(data?.role || 'none');
+    } catch (err) {
+      console.error("Error checking DB role:", err);
+      setDbRole('error');
+    }
   };
 
   const fetchProfiles = async () => {
     setLoading(true);
     try {
-      await checkMyRole();
+      await checkMyDbRole();
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('last_login', { ascending: false });
 
-      if (error) throw error;
-      setProfiles(data || []);
+      if (error) {
+        // If we get an error here, it's almost certainly RLS
+        console.error("RLS Error fetching profiles:", error);
+        setProfiles([]);
+      } else {
+        setProfiles(data || []);
+      }
     } catch (error: any) {
-      console.error("Error fetching profiles:", error);
-      // If we can't fetch, it's likely an RLS issue
+      console.error("General error fetching profiles:", error);
     } finally {
       setLoading(false);
     }
@@ -65,17 +76,17 @@ const AdminDashboardPage = () => {
   const handleSyncProfile = async () => {
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('admin-manage-users', {
+      const { error } = await supabase.functions.invoke('admin-manage-users', {
         body: { action: 'sync-profile' }
       });
 
       if (error) throw error;
       
-      showSuccess('Admin permissions synchronized with database');
+      showSuccess('Admin permissions synchronized');
       await refreshRole();
       await fetchProfiles();
     } catch (error: any) {
-      showError('Failed to sync permissions: ' + error.message);
+      showError('Sync failed: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -149,6 +160,7 @@ const AdminDashboardPage = () => {
     }
   };
 
+  // A sync is needed if the database doesn't explicitly say 'admin'
   const isSyncNeeded = dbRole !== 'admin';
 
   return (
@@ -215,7 +227,8 @@ const AdminDashboardPage = () => {
                 <div>
                   <p className="font-semibold text-amber-900">Database Sync Required</p>
                   <p className="text-sm text-amber-800">
-                    Your account is recognized as an admin, but your database profile needs to be updated to view the user list.
+                    Your database profile needs to be updated to 'admin' to view the user list. 
+                    If you've already run the SQL, click "Sync Now" to refresh your session.
                   </p>
                 </div>
               </div>
@@ -262,19 +275,14 @@ const AdminDashboardPage = () => {
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                     </TableCell>
                   </TableRow>
-                ) : profiles.length <= 1 && isSyncNeeded ? (
+                ) : profiles.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-12">
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <Shield className="h-12 w-12 opacity-20" />
-                        <p>Please click "Sync Now" above to view the full user list.</p>
+                        <p>No users found or access denied by database rules.</p>
+                        {isSyncNeeded && <p className="text-xs">Try clicking "Sync Now" above.</p>}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ) : profiles.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No users found.
                     </TableCell>
                   </TableRow>
                 ) : profiles.map((profile) => (
