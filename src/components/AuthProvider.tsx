@@ -56,19 +56,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       try {
+        // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
         if (!mounted) return;
 
         setSession(initialSession);
         const currentUser = initialSession?.user ?? null;
         setUser(currentUser);
 
+        // We have the session, so we can stop the main loading state
+        setLoading(false);
+
+        // Fetch role in the background
         if (currentUser) {
-          await fetchRole(currentUser.id);
+          fetchRole(currentUser.id);
         }
       } catch (err) {
         console.error("Init auth failed:", err);
-      } finally {
         if (mounted) setLoading(false);
       }
     };
@@ -83,23 +88,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(newUser);
       
       if (event === 'SIGNED_IN' && newUser) {
-        setLoading(true);
-        try {
-          await fetchRole(newUser.id);
-        } finally {
-          setLoading(false);
-        }
+        // Don't set loading to true here to avoid flickering or getting stuck
+        fetchRole(newUser.id);
       } else if (event === 'SIGNED_OUT') {
         setRole(null);
-        setLoading(false);
-      } else if (event === 'INITIAL_SESSION' && !newSession) {
-        setLoading(false);
       }
+      
+      // Ensure loading is false after any auth state change event
+      setLoading(false);
     });
+
+    // Safety timeout to ensure loading screen always disappears
+    const timer = setTimeout(() => {
+      if (mounted && loading) setLoading(false);
+    }, 5000);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(timer);
     };
   }, []);
 
