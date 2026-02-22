@@ -20,9 +20,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (userId: string, email?: string) => {
-    // Immediate local check for admin emails
+    // Determine the role locally first as a baseline
+    let determinedRole: 'admin' | 'user' = 'user';
+    
     if (email === 'angka@gmail.com' || email === 'admin@example.com') {
-      setRole('admin');
+      determinedRole = 'admin';
     }
 
     try {
@@ -32,21 +34,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error("[AuthProvider] Role fetch error:", error.message);
-        if (!role) setRole('user');
-      } else if (data) {
+      if (!error && data) {
         if (data.is_banned) {
           await supabase.auth.signOut();
           return;
         }
-        const userRole = String(data.role).toLowerCase() === 'admin' ? 'admin' : 'user';
-        setRole(userRole);
+        // If the database has a specific role, use it, but keep admin if email matches
+        const dbRole = String(data.role).toLowerCase() === 'admin' ? 'admin' : 'user';
+        if (dbRole === 'admin') {
+          determinedRole = 'admin';
+        }
       }
     } catch (err) {
       console.error("[AuthProvider] Unexpected error in fetchRole:", err);
-      if (!role) setRole('user');
     }
+
+    // Set the role once to prevent flickering
+    setRole(determinedRole);
   };
 
   const refreshRole = async () => {
@@ -67,8 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (initialSession) {
           setSession(initialSession);
           setUser(initialSession.user);
-          // Fetch role in background, don't await it to prevent blocking the UI
-          fetchRole(initialSession.user.id, initialSession.user.email);
+          // Fetch role immediately
+          await fetchRole(initialSession.user.id, initialSession.user.email);
         }
         
         setLoading(false);
@@ -80,14 +84,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
 
       if (newSession) {
         setSession(newSession);
         setUser(newSession.user);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          fetchRole(newSession.user.id, newSession.user.email);
+          await fetchRole(newSession.user.id, newSession.user.email);
         }
       } else {
         setSession(null);
