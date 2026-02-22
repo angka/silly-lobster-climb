@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search, Download, Upload, Shield, Settings } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Search, Download, Upload, Shield, Settings, User, KeyRound } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -369,6 +369,21 @@ const DashboardPage: React.FC = () => {
               </CardContent>
             </Card>
           )}
+
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" /> My Account
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Link to="/settings">
+                <Button variant="outline" className="w-full" size="sm">
+                  <KeyRound className="mr-2 h-4 w-4" /> Change Password
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
           <Card className="p-4">
             <h2 className="text-xl font-semibold mb-4">Categories</h2>
