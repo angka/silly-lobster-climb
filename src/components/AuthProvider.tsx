@@ -19,9 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<'admin' | 'user' | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (userId: string, isInitial: boolean = false) => {
-    if (isInitial) setLoading(true);
-    
+  const fetchRole = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -31,26 +29,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.warn("Profile fetch error:", error.message);
-        // If we can't fetch the profile, we default to 'user' but don't overwrite if already set
-        setRole(prev => prev || 'user');
+        setRole('user');
       } else if (data) {
         if (data.is_banned) {
           await supabase.auth.signOut();
           return;
         }
         setRole(data.role || 'user');
+      } else {
+        setRole('user');
       }
     } catch (err) {
       console.error("Auth role check failed:", err);
-      setRole(prev => prev || 'user');
-    } finally {
-      if (isInitial) setLoading(false);
+      setRole('user');
     }
   };
 
   const refreshRole = async () => {
     if (user) {
-      await fetchRole(user.id, false);
+      await fetchRole(user.id);
     }
   };
 
@@ -58,17 +55,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const initAuth = async () => {
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
-      if (!mounted) return;
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!mounted) return;
 
-      setSession(initialSession);
-      const currentUser = initialSession?.user ?? null;
-      setUser(currentUser);
+        setSession(initialSession);
+        const currentUser = initialSession?.user ?? null;
+        setUser(currentUser);
 
-      if (currentUser) {
-        await fetchRole(currentUser.id, true);
-      } else {
-        setLoading(false);
+        if (currentUser) {
+          // Start fetching role but don't block the initial loading state if it takes too long
+          fetchRole(currentUser.id).finally(() => {
+            if (mounted) setLoading(false);
+          });
+          
+          // Safety timeout: if role fetch takes > 3s, show the app anyway
+          setTimeout(() => {
+            if (mounted && loading) setLoading(false);
+          }, 3000);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Init auth failed:", err);
+        if (mounted) setLoading(false);
       }
     };
 
@@ -82,7 +92,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(newUser);
       
       if (event === 'SIGNED_IN' && newUser) {
-        await fetchRole(newUser.id, true);
+        setLoading(true);
+        await fetchRole(newUser.id);
+        setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setRole(null);
         setLoading(false);
@@ -95,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // Removed user?.id and role from dependencies to prevent unnecessary re-runs
+  }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
