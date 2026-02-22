@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search, Download, Upload, Shield, Settings, User, KeyRound, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Search, Download, Upload, Shield, Settings, User, KeyRound, Loader2, Database } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -20,6 +20,27 @@ interface Patient extends PatientFormData {
   user_id: string;
 }
 
+interface Session {
+  id: string;
+  patient_id: string;
+  user_id: string;
+  type: string;
+  lens_type: string;
+  date: string;
+  data: any;
+}
+
+const parseCsvRow = (row: string): string[] => {
+  const regex = /(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^,]*))(?:,|$)/g;
+  const matches = Array.from(row.matchAll(regex));
+  return matches.map(match => {
+    if (match[1] !== undefined) {
+      return match[1].replace(/""/g, '"');
+    }
+    return match[2] || '';
+  });
+};
+
 const DashboardPage: React.FC = () => {
   const { user, role } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -31,6 +52,11 @@ const DashboardPage: React.FC = () => {
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const fileInputJsonRef = useRef<HTMLInputElement>(null);
+  const fileInputCsvRef = useRef<HTMLInputElement>(null);
 
   const fetchPatients = async () => {
     setLoading(true);
@@ -143,6 +169,180 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleExportAllData = async () => {
+    setIsExporting(true);
+    try {
+      const { data: patientsData, error: patientsError } = await supabase.from('patients').select('*');
+      if (patientsError) throw patientsError;
+
+      const { data: sessionsData, error: sessionsError } = await supabase.from('sessions').select('*');
+      if (sessionsError) throw sessionsError;
+
+      const backup = {
+        patients: patientsData,
+        sessions: sessionsData,
+        exportedAt: new Date().toISOString(),
+        version: "1.0"
+      };
+
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `emr_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showSuccess('Full database backup exported successfully!');
+    } catch (error: any) {
+      showError('Export failed: ' + error.message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportAllData = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const content = JSON.parse(e.target?.result as string);
+        if (!content.patients || !Array.isArray(content.patients)) {
+          throw new Error('Invalid backup file format');
+        }
+
+        // 1. Import Patients
+        // We'll map old IDs to new IDs to maintain session relationships
+        const idMap: Record<string, string> = {};
+        
+        for (const p of content.patients) {
+          const { id: oldId, created_at, updated_at, ...patientData } = p;
+          const { data: newPatient, error: pError } = await supabase
+            .from('patients')
+            .insert({ ...patientData, user_id: user.id })
+            .select()
+            .single();
+          
+          if (pError) throw pError;
+          idMap[oldId] = newPatient.id;
+        }
+
+        // 2. Import Sessions
+        if (content.sessions && Array.isArray(content.sessions)) {
+          const sessionsToInsert = content.sessions
+            .filter((s: any) => idMap[s.patient_id]) // Only sessions for patients we just imported
+            .map((s: any) => {
+              const { id, created_at, ...sessionData } = s;
+              return {
+                ...sessionData,
+                user_id: user.id,
+                patient_id: idMap[s.patient_id]
+              };
+            });
+
+          if (sessionsToInsert.length > 0) {
+            const { error: sError } = await supabase.from('sessions').insert(sessionsToInsert);
+            if (sError) throw sError;
+          }
+        }
+
+        showSuccess('Database restored successfully!');
+        fetchPatients();
+      } catch (error: any) {
+        showError('Import failed: ' + error.message);
+      } finally {
+        setIsImporting(false);
+        if (fileInputJsonRef.current) fileInputJsonRef.current.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleExportCsv = () => {
+    if (patients.length === 0) {
+      showError('No patient data to export.');
+      return;
+    }
+
+    const headers = ['Name', 'MRN', 'Hospital', 'Diagnosis', 'DOB', 'Gender', 'Phone', 'Doctor', 'Address', 'Category', 'Notes', 'VisitDate'];
+    const rows = patients.map(p => [
+      `"${p.name.replace(/"/g, '""')}"`,
+      p.medicalRecordNumber,
+      `"${(p.hospital || '').replace(/"/g, '""')}"`,
+      `"${(p.diagnosis || '').replace(/"/g, '""')}"`,
+      p.dateOfBirth ? p.dateOfBirth.toISOString().split('T')[0] : '',
+      p.gender || '',
+      p.contactNumber || '',
+      `"${p.doctorName.replace(/"/g, '""')}"`,
+      `"${p.address.replace(/"/g, '""')}"`,
+      p.lensCategory || '',
+      `"${(p.notes || '').replace(/"/g, '""')}"`,
+      p.dateOfVisit ? p.dateOfVisit.toISOString().split('T')[0] : ''
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patients_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showSuccess('Patients exported to CSV.');
+  };
+
+  const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const content = e.target?.result as string;
+        const lines = content.split('\n').filter(l => l.trim());
+        if (lines.length < 2) throw new Error('CSV is empty or invalid');
+
+        const patientsToInsert = lines.slice(1).map(line => {
+          const values = parseCsvRow(line);
+          return {
+            user_id: user.id,
+            name: values[0],
+            medical_record_number: values[1],
+            hospital: values[2],
+            diagnosis: values[3],
+            date_of_birth: values[4] || null,
+            gender: values[5],
+            contact_number: values[6],
+            doctor_name: values[7],
+            address: values[8],
+            lens_category: values[9],
+            notes: values[10],
+            date_of_visit: values[11] || null
+          };
+        });
+
+        const { error } = await supabase.from('patients').insert(patientsToInsert);
+        if (error) throw error;
+
+        showSuccess(`${patientsToInsert.length} patients imported from CSV.`);
+        fetchPatients();
+      } catch (error: any) {
+        showError('CSV Import failed: ' + error.message);
+      } finally {
+        setIsImporting(false);
+        if (fileInputCsvRef.current) fileInputCsvRef.current.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const filteredPatients = patients.filter(patient => {
     const matchesCategory = selectedCategory === 'All' || patient.lensCategory === selectedCategory;
     const matchesSearch = searchQuery.toLowerCase() === '' ||
@@ -174,6 +374,34 @@ const DashboardPage: React.FC = () => {
               </CardContent>
             </Card>
           )}
+
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Database className="h-4 w-4 text-primary" /> Data Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" onClick={handleExportAllData} disabled={isExporting}>
+                  {isExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3 mr-1" />} JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fileInputJsonRef.current?.click()} disabled={isImporting}>
+                  {isImporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />} JSON
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" onClick={handleExportCsv}>
+                  <Download className="h-3 w-3 mr-1" /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fileInputCsvRef.current?.click()}>
+                  <Upload className="h-3 w-3 mr-1" /> CSV
+                </Button>
+              </div>
+              <input type="file" ref={fileInputJsonRef} onChange={handleImportAllData} accept=".json" className="hidden" />
+              <input type="file" ref={fileInputCsvRef} onChange={handleImportCsv} accept=".csv" className="hidden" />
+            </CardContent>
+          </Card>
 
           <Card className="border-slate-200">
             <CardHeader className="pb-3">
