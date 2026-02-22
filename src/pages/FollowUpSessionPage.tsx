@@ -83,12 +83,15 @@ const FollowUpSessionPage: React.FC = () => {
   const handleSaveFollowUpSession = async (data: FollowUpSessionFormData) => {
     if (!user || !id) return;
     try {
+      // Defensive check: ensure date is a Date object
+      const sessionDate = data.date instanceof Date ? data.date : new Date(data.date);
+      
       const sessionPayload = {
         patient_id: id,
         user_id: user.id,
         type: 'Follow-up',
         lens_type: lensType || data.lensType,
-        date: data.date.toISOString(),
+        date: sessionDate.toISOString(),
         data: data,
       };
 

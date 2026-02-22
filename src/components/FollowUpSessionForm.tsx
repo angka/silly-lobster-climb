@@ -56,8 +56,13 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   onCancel,
   previousRGPFittingSessions = [],
 }) => {
-  const [date, setDate] = useState<Date>(initialData?.date || new Date());
-  const [nextFollowUpDate, setNextFollowUpDate] = useState<Date | undefined>(initialData?.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined);
+  // Ensure dates are Date objects even if passed as strings from JSON
+  const [date, setDate] = useState<Date>(
+    initialData?.date ? new Date(initialData.date) : new Date()
+  );
+  const [nextFollowUpDate, setNextFollowUpDate] = useState<Date | undefined>(
+    initialData?.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined
+  );
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [od_bcva, setOd_bcva] = useState(initialData?.od_bcva || '');
   const [od_wfdt, setOd_wfdt] = useState(initialData?.od_wfdt || '');
@@ -73,7 +78,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
 
   useEffect(() => {
     if (initialData) {
-      setDate(initialData.date);
+      setDate(new Date(initialData.date));
       setNextFollowUpDate(initialData.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined);
       setNotes(initialData.notes);
       setOd_bcva(initialData.od_bcva);
