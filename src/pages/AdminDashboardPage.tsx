@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { format } from 'date-fns';
-import { Shield, UserMinus, UserCheck, Ban, UserPlus, Trash2, Loader2, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Shield, UserMinus, UserCheck, Ban, UserPlus, Trash2, Loader2, RefreshCw, AlertTriangle, CheckCircle2, KeyRound } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 
 interface Profile {
@@ -31,6 +31,11 @@ const AdminDashboardPage = () => {
   const [newPassword, setNewPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dbRole, setDbRole] = useState<string | null>(null);
+  
+  // Password reset state
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [isResetOpen, setIsResetOpen] = useState(false);
 
   const checkMyDbRole = async () => {
     if (!user) return;
@@ -60,7 +65,6 @@ const AdminDashboardPage = () => {
         .order('last_login', { ascending: false });
 
       if (error) {
-        // If we get an error here, it's almost certainly RLS
         console.error("RLS Error fetching profiles:", error);
         setProfiles([]);
       } else {
@@ -118,6 +122,29 @@ const AdminDashboardPage = () => {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetUserId) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.functions.invoke('admin-manage-users', {
+        body: { action: 'update-password', userId: resetUserId, newPassword: resetPassword }
+      });
+
+      if (error) throw error;
+      
+      showSuccess('Password reset successfully');
+      setIsResetOpen(false);
+      setResetPassword('');
+      setResetUserId(null);
+    } catch (error: any) {
+      showError(error.message || 'Failed to reset password');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     try {
       const { error } = await supabase.functions.invoke('admin-manage-users', {
@@ -160,7 +187,6 @@ const AdminDashboardPage = () => {
     }
   };
 
-  // A sync is needed if the database doesn't explicitly say 'admin'
   const isSyncNeeded = dbRole !== 'admin';
 
   return (
@@ -308,6 +334,17 @@ const AdminDashboardPage = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
+                          onClick={() => {
+                            setResetUserId(profile.id);
+                            setIsResetOpen(true);
+                          }}
+                          title="Reset Password"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
                           onClick={() => toggleRole(profile)}
                           title="Toggle Admin Role"
                         >
@@ -355,6 +392,35 @@ const AdminDashboardPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset User Password</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleResetPassword} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-password">New Password</Label>
+              <Input 
+                id="reset-password" 
+                type="password" 
+                value={resetPassword} 
+                onChange={(e) => setResetPassword(e.target.value)} 
+                required 
+                minLength={6}
+                placeholder="Enter new password"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Reset Password
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

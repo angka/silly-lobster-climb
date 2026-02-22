@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, RefreshCw } from 'lucide-react';
+import { LogOut, RefreshCw, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showSuccess } from '@/utils/toast';
 import { useAuth } from './AuthProvider';
@@ -55,15 +55,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </button>
                 </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleLogout} 
-                className="text-primary-foreground hover:bg-primary-foreground/20"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">Logout</span>
-              </Button>
+              
+              <div className="flex items-center gap-1">
+                <Link to="/settings">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-primary-foreground hover:bg-primary-foreground/20"
+                    title="Settings"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleLogout} 
+                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                  title="Logout"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           )}
         </div>

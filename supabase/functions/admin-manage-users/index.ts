@@ -31,12 +31,11 @@ serve(async (req) => {
 
     const isAdminEmail = user.email === 'angka@gmail.com' || user.email === 'admin@example.com';
     
-    const { action, email, password, userId } = await req.json()
+    const { action, email, password, userId, newPassword } = await req.json()
 
     // Special action to fix the admin's own profile
     if (action === 'sync-profile') {
       if (isAdminEmail) {
-        // Use upsert to ensure the profile exists and has the admin role
         const { error: upsertError } = await supabaseAdmin
           .from('profiles')
           .upsert({ 
@@ -64,7 +63,11 @@ serve(async (req) => {
 
     const isDbAdmin = profile?.role === 'admin';
 
-    if (!isAdminEmail && !isDbAdmin) {
+    // Allow users to update their OWN password via this function if needed, 
+    // but primarily this is for admins managing others.
+    const isUpdatingSelf = userId === user.id;
+
+    if (!isAdminEmail && !isDbAdmin && !isUpdatingSelf) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 403, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -79,7 +82,6 @@ serve(async (req) => {
       })
       if (error) throw error;
       
-      // Ensure profile is created immediately
       await supabaseAdmin.from('profiles').insert({
         id: data.user.id,
         email: data.user.email,
@@ -91,6 +93,14 @@ serve(async (req) => {
 
     if (action === 'delete') {
       const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    if (action === 'update-password') {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        password: newPassword
+      });
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }

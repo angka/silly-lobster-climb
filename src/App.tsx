@@ -11,6 +11,7 @@ import PatientDetailsPage from "./pages/PatientDetailsPage";
 import FittingSessionPage from "./pages/FittingSessionPage";
 import FollowUpSessionPage from "./pages/FollowUpSessionPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import SettingsPage from "./pages/SettingsPage";
 import { AuthProvider, useAuth } from "./components/AuthProvider";
 import React from "react";
 
@@ -19,7 +20,6 @@ const queryClient = new QueryClient();
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({ children, adminOnly }) => {
   const { session, role, loading } = useAuth();
 
-  // If we are still checking the session, show loading
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
@@ -29,12 +29,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
     );
   }
 
-  // If no session, redirect to login
   if (!session) {
     return <Navigate to="/login" replace />;
   }
 
-  // If admin only route and user is not admin
   if (adminOnly && role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
@@ -52,6 +50,14 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />
