@@ -19,47 +19,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<'admin' | 'user' | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (userId: string) => {
+  const fetchRole = async (userId: string, email?: string) => {
     try {
-      console.log("[AuthProvider] Fetching role for user:", userId);
+      console.log("[AuthProvider] Fetching role for:", email || userId);
+      
+      // Immediate fallback for known admin emails to prevent "Loading" hang
+      if (email === 'angka@gmail.com' || email === 'admin@example.com') {
+        setRole('admin');
+      }
+
       const { data, error } = await supabase
         .from('profiles')
-        .select('role, is_banned, email')
+        .select('role, is_banned')
         .eq('id', userId)
         .single();
 
       if (error) {
         console.error("[AuthProvider] Profile fetch error:", error.message);
-        // Fallback for the primary admin email if the profile record is missing or inaccessible
-        if (user?.email === 'angka@gmail.com' || user?.email === 'admin@example.com') {
-          console.log("[AuthProvider] Applying admin fallback based on email");
-          setRole('admin');
-        } else {
-          setRole('user');
-        }
+        // If we haven't set it via email fallback yet
+        if (!role) setRole('user');
       } else if (data) {
-        console.log("[AuthProvider] Profile data received:", data);
         if (data.is_banned) {
-          console.warn("[AuthProvider] User is banned, signing out");
           await supabase.auth.signOut();
           return;
         }
-        
-        // Ensure we handle the role string correctly
         const userRole = String(data.role).toLowerCase() === 'admin' ? 'admin' : 'user';
         setRole(userRole);
       } else {
-        setRole('user');
+        if (!role) setRole('user');
       }
     } catch (err) {
-      console.error("[AuthProvider] Auth role check failed:", err);
-      setRole('user');
+      console.error("[AuthProvider] Unexpected error in fetchRole:", err);
+      if (!role) setRole('user');
     }
   };
 
   const refreshRole = async () => {
     if (user) {
-      await fetchRole(user.id);
+      await fetchRole(user.id, user.email);
     }
   };
 
@@ -72,17 +69,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!mounted) return;
 
-        setSession(initialSession);
-        const currentUser = initialSession?.user ?? null;
-        setUser(currentUser);
-
-        if (currentUser) {
-          await fetchRole(currentUser.id);
+        if (initialSession) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          await fetchRole(initialSession.user.id, initialSession.user.email);
         }
         
         setLoading(false);
       } catch (err) {
-        console.error("[AuthProvider] Init auth failed:", err);
+        console.error("[AuthProvider] Init failed:", err);
         if (mounted) setLoading(false);
       }
     };
@@ -92,27 +87,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
 
-      const newUser = newSession?.user ?? null;
-      setSession(newSession);
-      setUser(newUser);
-      
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && newUser) {
-        await fetchRole(newUser.id);
-      } else if (event === 'SIGNED_OUT') {
+      if (newSession) {
+        setSession(newSession);
+        setUser(newSession.user);
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await fetchRole(newSession.user.id, newSession.user.email);
+        }
+      } else {
+        setSession(null);
+        setUser(null);
         setRole(null);
       }
       
       setLoading(false);
     });
 
-    const timer = setTimeout(() => {
-      if (mounted && loading) setLoading(false);
-    }, 5000);
-
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      clearTimeout(timer);
     };
   }, []);
 
