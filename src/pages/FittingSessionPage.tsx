@@ -2,145 +2,129 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import FittingSessionForm, { FittingSessionFormData } from '@/components/FittingSessionForm';
-import RGPFittingSessionForm, { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm'; // Import RGP form
+import RGPFittingSessionForm, { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm';
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
-import { ArrowLeft, Printer } from 'lucide-react'; // Import Printer icon
+import { ArrowLeft, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Patient extends PatientFormData {
   id: string;
 }
 
-interface FollowUpSessionFormData {
-  notes: string;
-  // Add other follow-up specific fields here if needed
-}
-
-// Define a generic session interface
-interface Session {
-  id: string;
-  patientId: string;
-  type: 'Fitting' | 'Follow-up';
-  lensType?: 'ROSE_K2_XL' | 'RGP'; // Add lensType to session
-  date: Date; // Date of the session
-  data: FittingSessionFormData | RGPFittingSessionFormData | FollowUpSessionFormData;
-}
-
 const FittingSessionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
-  const lensType = searchParams.get('lensType') as 'ROSE_K2_XL' | 'RGP' | null; // Get lensType from URL
+  const lensType = searchParams.get('lensType') as 'ROSE_K2_XL' | 'RGP' | null;
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [initialFittingData, setInitialFittingData] = useState<FittingSessionFormData | RGPFittingSessionFormData | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedPatients = localStorage.getItem('patients');
-    const storedSessions = localStorage.getItem('sessions');
+    const fetchData = async () => {
+      if (!id || !user) return;
+      setLoading(true);
+      try {
+        const { data: patientData, error: patientError } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-    if (storedPatients) {
-      const patients: Patient[] = JSON.parse(storedPatients).map((p: Patient) => ({
-        ...p,
-        dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
-        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
-      }));
-      const foundPatient = patients.find(p => p.id === id);
-      if (foundPatient) {
-        setPatient(foundPatient);
+        if (patientError) throw patientError;
 
-        if (sessionId && storedSessions) {
-          const allSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
-            ...s,
-            date: new Date(s.date),
-          }));
-          const foundSession = allSessions.find(s => s.id === sessionId && s.patientId === id && s.type === 'Fitting');
-          if (foundSession) {
-            setInitialFittingData(foundSession.data as FittingSessionFormData | RGPFittingSessionFormData);
-          } else {
-            showError('Fitting session data not found.');
-            // Optionally navigate back or clear sessionId
-          }
+        setPatient({
+          ...patientData,
+          dateOfBirth: patientData.date_of_birth ? new Date(patientData.date_of_birth) : undefined,
+          dateOfVisit: patientData.date_of_visit ? new Date(patientData.date_of_visit) : undefined,
+          lensCategory: patientData.lens_category,
+          medicalRecordNumber: patientData.medical_record_number,
+          contactNumber: patientData.contact_number,
+          doctorName: patientData.doctor_name,
+        });
+
+        if (sessionId) {
+          const { data: sessionData, error: sessionError } = await supabase
+            .from('sessions')
+            .select('*')
+            .eq('id', sessionId)
+            .single();
+
+          if (sessionError) throw sessionError;
+          setInitialFittingData(sessionData.data);
         }
-      } else {
-        showError('Patient not found.');
-        navigate('/dashboard');
+      } catch (error: any) {
+        showError(error.message || 'Failed to fetch data');
+        navigate(`/patients/${id}`);
+      } finally {
+        setLoading(false);
       }
-    } else {
-      showError('No patient data available.');
-      navigate('/dashboard');
-    }
-  }, [id, navigate, sessionId, lensType]); // Add lensType to dependencies
+    };
 
-  const handleSaveFittingSession = (data: FittingSessionFormData | RGPFittingSessionFormData) => {
-    if (!lensType) {
-      showError('Lens type not specified for this session.');
+    fetchData();
+  }, [id, sessionId, user]);
+
+  const handleSaveFittingSession = async (data: FittingSessionFormData | RGPFittingSessionFormData) => {
+    if (!lensType || !user || !id) {
+      showError('Missing required information to save session.');
       return;
     }
 
-    const newSession: Session = {
-      id: sessionId || `session-${Date.now()}`,
-      patientId: id!,
-      type: 'Fitting',
-      lensType: lensType, // Save the selected lens type
-      date: data.date,
-      data: data,
-    };
+    try {
+      const sessionPayload = {
+        patient_id: id,
+        user_id: user.id,
+        type: 'Fitting',
+        lens_type: lensType,
+        date: data.date.toISOString(),
+        data: data,
+      };
 
-    const storedSessions = localStorage.getItem('sessions');
-    let existingSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
-      ...s,
-      date: new Date(s.date),
-    })) : [];
+      if (sessionId) {
+        const { error } = await supabase
+          .from('sessions')
+          .update(sessionPayload)
+          .eq('id', sessionId);
+        if (error) throw error;
+        showSuccess('Fitting session updated successfully!');
+      } else {
+        const { error } = await supabase.from('sessions').insert(sessionPayload);
+        if (error) throw error;
+        showSuccess('New fitting session added successfully!');
+      }
 
-    if (sessionId) {
-      existingSessions = existingSessions.map(s => s.id === sessionId ? newSession : s);
-      showSuccess(`Fitting session for ${data.patientName} updated successfully!`);
-    } else {
-      existingSessions = [...existingSessions, newSession];
-      showSuccess(`New fitting session for ${data.patientName} added successfully!`);
+      navigate(`/patients/${id}`);
+    } catch (error: any) {
+      showError(error.message || 'Failed to save fitting session');
     }
-
-    localStorage.setItem('sessions', JSON.stringify(existingSessions));
-    navigate(`/patients/${id}`);
   };
 
-  const handleCancel = () => {
-    navigate(`/patients/${id}`);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  if (!patient) {
+  if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <p className="text-xl text-gray-600">Loading patient details for fitting session...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </Layout>
     );
   }
 
-  if (!lensType && !sessionId) {
-    // If no lensType is specified and not editing an existing session, redirect to patient details
-    // to force selection or prevent direct access.
-    showError('Please select a lens type to start a new fitting session.');
-    navigate(`/patients/${id}`);
-    return null;
-  }
+  if (!patient) return null;
 
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-4">
-        <div className="flex justify-between items-center mb-6 print:hidden"> {/* Hide buttons on print */}
+        <div className="flex justify-between items-center mb-6 print:hidden">
           <Button variant="outline" onClick={() => navigate(`/patients/${id}`)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient Details
           </Button>
-          <Button onClick={handlePrint}>
+          <Button onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" /> Print Session
           </Button>
         </div>
@@ -149,23 +133,23 @@ const FittingSessionPage: React.FC = () => {
             patientName={patient.name}
             medicalRecordNumber={patient.medicalRecordNumber}
             dateOfBirth={patient.dateOfBirth}
-            diagnosis={patient.diagnosis} // Pass diagnosis
+            diagnosis={patient.diagnosis}
             initialData={initialFittingData as FittingSessionFormData}
             onSubmit={handleSaveFittingSession}
-            onCancel={handleCancel}
+            onCancel={() => navigate(`/patients/${id}`)}
           />
         ) : lensType === 'RGP' ? (
           <RGPFittingSessionForm
             patientName={patient.name}
             medicalRecordNumber={patient.medicalRecordNumber}
             dateOfBirth={patient.dateOfBirth}
-            diagnosis={patient.diagnosis} // Pass diagnosis
+            diagnosis={patient.diagnosis}
             initialData={initialFittingData as RGPFittingSessionFormData}
             onSubmit={handleSaveFittingSession}
-            onCancel={handleCancel}
+            onCancel={() => navigate(`/patients/${id}`)}
           />
         ) : (
-          <p className="text-xl text-gray-600">Invalid lens type selected or session type not recognized.</p>
+          <p className="text-xl text-gray-600">Invalid lens type selected.</p>
         )}
       </div>
     </Layout>

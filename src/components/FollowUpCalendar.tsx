@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, isSameDay } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Phone, User, Activity, Eye } from 'lucide-react';
+import { Phone, User, Activity, Eye, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 
 interface ScheduledPatient {
   id: string;
@@ -17,46 +19,54 @@ interface ScheduledPatient {
 }
 
 const FollowUpCalendar = () => {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [scheduledPatients, setScheduledPatients] = useState<ScheduledPatient[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const scheduledPatients = useMemo(() => {
-    try {
-      const storedPatients = localStorage.getItem('patients');
-      const storedSessions = localStorage.getItem('sessions');
-      
-      if (!storedPatients || !storedSessions) return [];
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select(`
+            lens_type,
+            data,
+            patients (
+              id,
+              name,
+              contact_number,
+              diagnosis,
+              medical_record_number
+            )
+          `)
+          .not('data->nextFollowUpDate', 'is', null);
 
-      const patients = JSON.parse(storedPatients);
-      const sessions = JSON.parse(storedSessions);
+        if (error) throw error;
 
-      if (!Array.isArray(patients) || !Array.isArray(sessions)) return [];
+        const scheduled: ScheduledPatient[] = data.map((s: any) => ({
+          id: s.patients.id,
+          name: s.patients.name,
+          phone: s.patients.contact_number || 'N/A',
+          diagnosis: s.patients.diagnosis || 'N/A',
+          lensType: s.lens_type || 'N/A',
+          mrn: s.patients.medical_record_number,
+          followUpDate: new Date(s.data.nextFollowUpDate)
+        }));
 
-      const scheduled: ScheduledPatient[] = [];
+        setScheduledPatients(scheduled);
+      } catch (error) {
+        console.error("Error fetching calendar data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      sessions.forEach((session: any) => {
-        if (session && session.data && session.data.nextFollowUpDate) {
-          const patient = patients.find((p: any) => p && p.id === session.patientId);
-          if (patient) {
-            scheduled.push({
-              id: patient.id,
-              name: patient.name || 'Unknown',
-              phone: patient.contactNumber || 'N/A',
-              diagnosis: patient.diagnosis || 'N/A',
-              lensType: session.lensType || patient.lensCategory || 'N/A',
-              mrn: patient.medicalRecordNumber || 'N/A',
-              followUpDate: new Date(session.data.nextFollowUpDate)
-            });
-          }
-        }
-      });
-
-      return scheduled;
-    } catch (e) {
-      console.error("Error parsing calendar data:", e);
-      return [];
-    }
-  }, []);
+    fetchSchedule();
+  }, [user]);
 
   const patientsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
@@ -94,30 +104,38 @@ const FollowUpCalendar = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={handleDateSelect}
-          className="rounded-md border shadow"
-          modifiers={modifiers}
-          modifiersStyles={modifiersStyles}
-        />
-        
-        <div className="mt-4 w-full">
-          <h4 className="text-sm font-medium mb-2">Upcoming Today ({patientsForSelectedDate.length})</h4>
-          {patientsForSelectedDate.length > 0 ? (
-            <div className="space-y-2">
-              {patientsForSelectedDate.map((p, i) => (
-                <div key={i} className="text-sm p-2 bg-muted rounded-md flex justify-between items-center">
-                  <span>{p.name}</span>
-                  <Badge variant="outline">{p.lensType}</Badge>
+        {loading ? (
+          <div className="h-[300px] flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateSelect}
+              className="rounded-md border shadow"
+              modifiers={modifiers}
+              modifiersStyles={modifiersStyles}
+            />
+            
+            <div className="mt-4 w-full">
+              <h4 className="text-sm font-medium mb-2">Upcoming Today ({patientsForSelectedDate.length})</h4>
+              {patientsForSelectedDate.length > 0 ? (
+                <div className="space-y-2">
+                  {patientsForSelectedDate.map((p, i) => (
+                    <div key={i} className="text-sm p-2 bg-muted rounded-md flex justify-between items-center">
+                      <span>{p.name}</span>
+                      <Badge variant="outline">{p.lensType}</Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <p className="text-xs text-muted-foreground">No appointments for selected date.</p>
+              )}
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">No appointments for selected date.</p>
-          )}
-        </div>
+          </>
+        )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">

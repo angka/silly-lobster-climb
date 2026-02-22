@@ -4,129 +4,124 @@ import Layout from '@/components/Layout';
 import FollowUpSessionForm, { FollowUpSessionFormData } from '@/components/FollowUpSessionForm';
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm'; // Import RGPFittingSessionFormData
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Patient extends PatientFormData {
   id: string;
 }
 
-interface Session {
-  id: string;
-  patientId: string;
-  type: 'Fitting' | 'Follow-up';
-  lensType?: 'ROSE_K2_XL' | 'RGP';
-  date: Date;
-  data: FollowUpSessionFormData | RGPFittingSessionFormData; // Allow RGPFittingSessionFormData here
-}
-
 const FollowUpSessionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
-  const lensType = searchParams.get('lensType') as 'ROSE_K2_XL' | 'RGP' | null; // Get lensType from URL
+  const lensType = searchParams.get('lensType') as 'ROSE_K2_XL' | 'RGP' | null;
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [initialFollowUpData, setInitialFollowUpData] = useState<FollowUpSessionFormData | undefined>(undefined);
-  const [previousRGPFittingSessions, setPreviousRGPFittingSessions] = useState<Session[]>([]); // State for RGP fitting sessions
+  const [previousRGPFittingSessions, setPreviousRGPFittingSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedPatients = localStorage.getItem('patients');
-    const storedSessions = localStorage.getItem('sessions');
+    const fetchData = async () => {
+      if (!id || !user) return;
+      setLoading(true);
+      try {
+        const { data: patientData, error: patientError } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-    if (storedPatients) {
-      const patients: Patient[] = JSON.parse(storedPatients).map((p: Patient) => ({
-        ...p,
-        dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
-        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
-      }));
-      const foundPatient = patients.find(p => p.id === id);
-      if (foundPatient) {
-        setPatient(foundPatient);
+        if (patientError) throw patientError;
 
-        if (storedSessions) {
-          const allSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
-            ...s,
-            date: new Date(s.date),
-          }));
+        setPatient({
+          ...patientData,
+          dateOfBirth: patientData.date_of_birth ? new Date(patientData.date_of_birth) : undefined,
+          dateOfVisit: patientData.date_of_visit ? new Date(patientData.date_of_visit) : undefined,
+          lensCategory: patientData.lens_category,
+          medicalRecordNumber: patientData.medical_record_number,
+          contactNumber: patientData.contact_number,
+          doctorName: patientData.doctor_name,
+        });
 
-          // Filter for RGP fitting sessions for the current patient
-          const rgpFittingSessions = allSessions.filter(
-            (s) => s.patientId === id && s.type === 'Fitting' && s.lensType === 'RGP'
-          );
-          setPreviousRGPFittingSessions(rgpFittingSessions);
+        const { data: rgpSessions, error: rgpError } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('patient_id', id)
+          .eq('type', 'Fitting')
+          .eq('lens_type', 'RGP');
 
-          if (sessionId) {
-            const foundSession = allSessions.find(s => s.id === sessionId && s.patientId === id && s.type === 'Follow-up');
-            if (foundSession) {
-              setInitialFollowUpData(foundSession.data as FollowUpSessionFormData);
-            } else {
-              showError('Follow-up session data not found.');
-            }
-          }
+        if (rgpError) throw rgpError;
+        setPreviousRGPFittingSessions(rgpSessions.map(s => ({ ...s, date: new Date(s.date) })));
+
+        if (sessionId) {
+          const { data: sessionData, error: sessionError } = await supabase
+            .from('sessions')
+            .select('*')
+            .eq('id', sessionId)
+            .single();
+
+          if (sessionError) throw sessionError;
+          setInitialFollowUpData(sessionData.data);
         }
-      } else {
-        showError('Patient not found.');
-        navigate('/dashboard');
+      } catch (error: any) {
+        showError(error.message || 'Failed to fetch data');
+        navigate(`/patients/${id}`);
+      } finally {
+        setLoading(false);
       }
-    } else {
-      showError('No patient data available.');
-      navigate('/dashboard');
-    }
-  }, [id, navigate, sessionId]);
-
-  const handleSaveFollowUpSession = (data: FollowUpSessionFormData) => {
-    if (!patient) {
-      showError('Patient data not loaded.');
-      return;
-    }
-
-    const newSession: Session = {
-      id: sessionId || `followup-${Date.now()}`,
-      patientId: id!,
-      type: 'Follow-up',
-      lensType: lensType || data.lensType, // Ensure lensType is saved
-      date: data.date,
-      data: data,
     };
 
-    const storedSessions = localStorage.getItem('sessions');
-    let existingSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
-      ...s,
-      date: new Date(s.date),
-    })) : [];
+    fetchData();
+  }, [id, sessionId, user]);
 
-    if (sessionId) {
-      existingSessions = existingSessions.map(s => s.id === sessionId ? newSession : s);
-      showSuccess(`Follow-up session for ${patient.name} updated successfully!`);
-    } else {
-      existingSessions = [...existingSessions, newSession];
-      showSuccess(`New follow-up session for ${patient.name} added successfully!`);
+  const handleSaveFollowUpSession = async (data: FollowUpSessionFormData) => {
+    if (!user || !id) return;
+    try {
+      const sessionPayload = {
+        patient_id: id,
+        user_id: user.id,
+        type: 'Follow-up',
+        lens_type: lensType || data.lensType,
+        date: data.date.toISOString(),
+        data: data,
+      };
+
+      if (sessionId) {
+        const { error } = await supabase
+          .from('sessions')
+          .update(sessionPayload)
+          .eq('id', sessionId);
+        if (error) throw error;
+        showSuccess('Follow-up session updated successfully!');
+      } else {
+        const { error } = await supabase.from('sessions').insert(sessionPayload);
+        if (error) throw error;
+        showSuccess('New follow-up session added successfully!');
+      }
+
+      navigate(`/patients/${id}`);
+    } catch (error: any) {
+      showError(error.message || 'Failed to save follow-up session');
     }
-
-    localStorage.setItem('sessions', JSON.stringify(existingSessions));
-    navigate(`/patients/${id}`);
   };
 
-  const handleCancel = () => {
-    navigate(`/patients/${id}`);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  if (!patient) {
+  if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <p className="text-xl text-gray-600">Loading patient details for follow-up session...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </Layout>
     );
   }
+
+  if (!patient) return null;
 
   return (
     <Layout>
@@ -135,7 +130,7 @@ const FollowUpSessionPage: React.FC = () => {
           <Button variant="outline" onClick={() => navigate(`/patients/${id}`)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient Details
           </Button>
-          <Button onClick={handlePrint}>
+          <Button onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" /> Print Session
           </Button>
         </div>
@@ -145,8 +140,8 @@ const FollowUpSessionPage: React.FC = () => {
           lensType={lensType || initialFollowUpData?.lensType}
           initialData={initialFollowUpData}
           onSubmit={handleSaveFollowUpSession}
-          onCancel={handleCancel}
-          previousRGPFittingSessions={previousRGPFittingSessions} // Pass the filtered sessions
+          onCancel={() => navigate(`/patients/${id}`)}
+          previousRGPFittingSessions={previousRGPFittingSessions}
         />
       </div>
     </Layout>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { FittingSessionFormData } from '@/components/FittingSessionForm';
@@ -13,6 +13,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import FollowUpSessionForm, { FollowUpSessionFormData } from '@/components/FollowUpSessionForm';
 import { RGPFittingSessionFormData } from '@/components/RGPFittingSessionForm';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Patient extends PatientFormData {
   id: string;
@@ -27,20 +29,13 @@ interface Session {
   data: FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData;
 }
 
-interface PreviousRGPFittingSessionForForm {
-  id: string;
-  patientId: string;
-  type: 'Fitting';
-  lensType: 'RGP';
-  date: Date;
-  data: RGPFittingSessionFormData;
-}
-
 const PatientDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
   const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false);
   const [isFittingLensTypeSelectionOpen, setIsFittingLensTypeSelectionOpen] = useState(false);
@@ -48,56 +43,61 @@ const PatientDetailsPage: React.FC = () => {
   const [isFollowUpLensTypeSelectionOpen, setIsFollowUpLensTypeSelectionOpen] = useState(false);
   const [selectedFollowUpLensType, setSelectedFollowUpLensType] = useState<'ROSE_K2_XL' | 'RGP' | undefined>(undefined);
   const [editingFollowUpSession, setEditingFollowUpSession] = useState<FollowUpSessionFormData & { id: string, lensType?: 'ROSE_K2_XL' | 'RGP' } | null>(null);
-  const [previousRGPFittingSessionsForForm, setPreviousRGPFittingSessionsForForm] = useState<PreviousRGPFittingSessionForForm[]>([]);
+
+  const fetchData = async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      const { data: patientData, error: patientError } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (patientError) throw patientError;
+
+      setPatient({
+        ...patientData,
+        dateOfBirth: patientData.date_of_birth ? new Date(patientData.date_of_birth) : undefined,
+        dateOfVisit: patientData.date_of_visit ? new Date(patientData.date_of_visit) : undefined,
+        lensCategory: patientData.lens_category,
+        medicalRecordNumber: patientData.medical_record_number,
+        contactNumber: patientData.contact_number,
+        doctorName: patientData.doctor_name,
+      });
+
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('patient_id', id)
+        .order('date', { ascending: false });
+
+      if (sessionError) throw sessionError;
+
+      setSessions(sessionData.map(s => ({
+        id: s.id,
+        patientId: s.patient_id,
+        type: s.type as 'Fitting' | 'Follow-up',
+        lensType: s.lens_type as 'ROSE_K2_XL' | 'RGP',
+        date: new Date(s.date),
+        data: s.data,
+      })));
+    } catch (error: any) {
+      showError(error.message || 'Failed to fetch patient details');
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const storedPatients = localStorage.getItem('patients');
-    const storedSessions = localStorage.getItem('sessions');
+    if (user) fetchData();
+  }, [id, user]);
 
-    if (storedPatients) {
-      const patients: Patient[] = JSON.parse(storedPatients).map((p: Patient) => ({
-        ...p,
-        dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
-        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
-      }));
-      const foundPatient = patients.find(p => p.id === id);
-      if (foundPatient) {
-        setPatient(foundPatient);
-      } else {
-        showError('Patient not found.');
-        navigate('/dashboard');
-      }
-    } else {
-      showError('No patient data available.');
-      navigate('/dashboard');
-    }
-
-    if (storedSessions) {
-      const allSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
-        ...s,
-        date: new Date(s.date),
-      }));
-      const patientSessions = allSessions.filter(s => s.patientId === id);
-      setSessions(patientSessions.sort((a, b) => b.date.getTime() - a.date.getTime()));
-
-      const rgpFittingSessions = allSessions.filter(
-        (s): s is PreviousRGPFittingSessionForForm =>
-          s.patientId === id && s.type === 'Fitting' && s.lensType === 'RGP'
-      );
-      setPreviousRGPFittingSessionsForForm(rgpFittingSessions);
-    }
-  }, [id, navigate]);
-
-  const handleStartFittingSession = () => {
-    setIsFittingLensTypeSelectionOpen(true);
-  };
+  const handleStartFittingSession = () => setIsFittingLensTypeSelectionOpen(true);
 
   const handleSelectFittingLensType = (lensType: 'ROSE_K2_XL' | 'RGP') => {
     setIsFittingLensTypeSelectionOpen(false);
-    if (!patient) {
-      showError('Patient data not loaded.');
-      return;
-    }
     navigate(`/patients/${id}/fitting-session?lensType=${lensType}`);
   };
 
@@ -113,76 +113,75 @@ const PatientDetailsPage: React.FC = () => {
     setIsFollowUpSessionDialogOpen(true);
   };
 
-  const handleSaveFollowUpSession = (data: FollowUpSessionFormData) => {
-    if (!patient) {
-      showError('Patient data not loaded.');
-      return;
+  const handleSaveFollowUpSession = async (data: FollowUpSessionFormData) => {
+    if (!patient || !user) return;
+    try {
+      const sessionPayload = {
+        patient_id: patient.id,
+        user_id: user.id,
+        type: 'Follow-up',
+        lens_type: selectedFollowUpLensType || editingFollowUpSession?.lensType,
+        date: data.date.toISOString(),
+        data: data,
+      };
+
+      if (editingFollowUpSession) {
+        const { error } = await supabase
+          .from('sessions')
+          .update(sessionPayload)
+          .eq('id', editingFollowUpSession.id);
+        if (error) throw error;
+        showSuccess('Follow-up session updated successfully!');
+      } else {
+        const { error } = await supabase.from('sessions').insert(sessionPayload);
+        if (error) throw error;
+        showSuccess('New follow-up session added successfully!');
+      }
+
+      setIsFollowUpSessionDialogOpen(false);
+      setEditingFollowUpSession(null);
+      setSelectedFollowUpLensType(undefined);
+      fetchData();
+    } catch (error: any) {
+      showError(error.message || 'Failed to save session');
     }
-
-    const newSession: Session = {
-      id: editingFollowUpSession?.id || `followup-${Date.now()}`,
-      patientId: patient.id,
-      type: 'Follow-up',
-      lensType: selectedFollowUpLensType || editingFollowUpSession?.lensType,
-      date: data.date,
-      data: data,
-    };
-
-    const storedSessions = localStorage.getItem('sessions');
-    let existingSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
-      ...s,
-      date: new Date(s.date),
-    })) : [];
-
-    if (editingFollowUpSession) {
-      existingSessions = existingSessions.map(s => s.id === editingFollowUpSession.id ? newSession : s);
-      showSuccess(`Follow-up session for ${patient.name} updated successfully!`);
-    } else {
-      existingSessions = [...existingSessions, newSession];
-      showSuccess(`New follow-up session for ${patient.name} added successfully!`);
-    }
-
-    localStorage.setItem('sessions', JSON.stringify(existingSessions));
-    setSessions(existingSessions.filter(s => s.patientId === patient.id).sort((a, b) => b.date.getTime() - a.date.getTime()));
-    setIsFollowUpSessionDialogOpen(false);
-    setEditingFollowUpSession(null);
-    setSelectedFollowUpLensType(undefined);
   };
 
   const handleViewSessionDetails = (sessionId: string, sessionType: 'Fitting' | 'Follow-up', lensType?: 'ROSE_K2_XL' | 'RGP') => {
-    if (sessionType === 'Fitting') {
-      navigate(`/patients/${patient?.id}/fitting-session?sessionId=${sessionId}${lensType ? `&lensType=${lensType}` : ''}`);
-    } else if (sessionType === 'Follow-up') {
-      navigate(`/patients/${patient?.id}/follow-up-session?sessionId=${sessionId}${lensType ? `&lensType=${lensType}` : ''}`);
-    }
+    const path = sessionType === 'Fitting' ? 'fitting-session' : 'follow-up-session';
+    navigate(`/patients/${id}/${path}?sessionId=${sessionId}${lensType ? `&lensType=${lensType}` : ''}`);
   };
 
-  const handleDeleteSession = () => {
-    if (sessionToDelete) {
-      const storedSessions = localStorage.getItem('sessions');
-      let existingSessions: Session[] = storedSessions ? JSON.parse(storedSessions).map((s: any) => ({
-        ...s,
-        date: new Date(s.date),
-      })) : [];
+  const handleDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', sessionToDelete.id);
 
-      const updatedSessions = existingSessions.filter(s => s.id !== sessionToDelete.id);
-      localStorage.setItem('sessions', JSON.stringify(updatedSessions));
-      setSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
+      if (error) throw error;
+
+      showSuccess('Session deleted successfully!');
       setIsSessionDeleteDialogOpen(false);
       setSessionToDelete(null);
-      showSuccess(`Session from ${format(sessionToDelete.date, 'PPP')} deleted successfully!`);
+      fetchData();
+    } catch (error: any) {
+      showError(error.message || 'Failed to delete session');
     }
   };
 
-  if (!patient) {
+  if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <p className="text-xl text-gray-600">Loading patient details...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </Layout>
     );
   }
+
+  if (!patient) return null;
 
   return (
     <Layout>
@@ -199,46 +198,16 @@ const PatientDetailsPage: React.FC = () => {
                 <CardDescription>Medical Record Number: {patient.medicalRecordNumber}</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Hospital</p>
-                  <p className="text-base">{patient.hospital || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Diagnosis</p>
-                  <p className="text-base">{patient.diagnosis || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
-                  <p className="text-base">{patient.dateOfBirth ? format(patient.dateOfBirth, 'PPP') : 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Gender</p>
-                  <p className="text-base">{patient.gender || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
-                  <p className="text-base">{patient.contactNumber || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Doctor's Name</p>
-                  <p className="text-base">{patient.doctorName || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Address</p>
-                  <p className="text-base">{patient.address || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Lens Category</p>
-                  <p className="text-base">{patient.lensCategory || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Last Visit</p>
-                  <p className="text-base">{patient.dateOfVisit ? format(patient.dateOfVisit, 'PPP') : 'N/A'}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm font-medium text-muted-foreground">Notes</p>
-                  <p className="text-base whitespace-pre-wrap">{patient.notes || 'No notes.'}</p>
-                </div>
+                <div><p className="text-sm font-medium text-muted-foreground">Hospital</p><p className="text-base">{patient.hospital || 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Diagnosis</p><p className="text-base">{patient.diagnosis || 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Date of Birth</p><p className="text-base">{patient.dateOfBirth ? format(patient.dateOfBirth, 'PPP') : 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Gender</p><p className="text-base">{patient.gender || 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Contact Number</p><p className="text-base">{patient.contactNumber || 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Doctor's Name</p><p className="text-base">{patient.doctorName || 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Address</p><p className="text-base">{patient.address || 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Lens Category</p><p className="text-base">{patient.lensCategory || 'N/A'}</p></div>
+                <div><p className="text-sm font-medium text-muted-foreground">Last Visit</p><p className="text-base">{patient.dateOfVisit ? format(patient.dateOfVisit, 'PPP') : 'N/A'}</p></div>
+                <div className="md:col-span-2"><p className="text-sm font-medium text-muted-foreground">Notes</p><p className="text-base whitespace-pre-wrap">{patient.notes || 'No notes.'}</p></div>
               </CardContent>
             </Card>
 
@@ -269,24 +238,8 @@ const PatientDetailsPage: React.FC = () => {
                             <TableCell>{session.lensType || 'N/A'}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleViewSessionDetails(session.id, session.type, session.lensType)}
-                                >
-                                  View Details
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSessionToDelete(session);
-                                    setIsSessionDeleteDialogOpen(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">Delete session from {format(session.date, 'PPP')}</span>
-                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handleViewSessionDetails(session.id, session.type, session.lensType)}>View Details</Button>
+                                <Button variant="destructive" size="sm" onClick={() => { setSessionToDelete(session); setIsSessionDeleteDialogOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -301,17 +254,10 @@ const PatientDetailsPage: React.FC = () => {
 
           <div className="md:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Start New Session</CardTitle>
-                <CardDescription>Choose the type of session for this patient.</CardDescription>
-              </CardHeader>
+              <CardHeader><CardTitle>Start New Session</CardTitle><CardDescription>Choose the type of session for this patient.</CardDescription></CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <Button className="flex-1" onClick={handleStartFittingSession}>
-                  Start Fitting Session
-                </Button>
-                <Button className="flex-1" variant="secondary" onClick={handleStartFollowUpSession}>
-                  Start Follow-up Session
-                </Button>
+                <Button className="flex-1" onClick={handleStartFittingSession}>Start Fitting Session</Button>
+                <Button className="flex-1" variant="secondary" onClick={handleStartFollowUpSession}>Start Follow-up Session</Button>
               </CardContent>
             </Card>
           </div>
@@ -320,83 +266,22 @@ const PatientDetailsPage: React.FC = () => {
 
       <AlertDialog open={isSessionDeleteDialogOpen} onOpenChange={setIsSessionDeleteDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the{' '}
-              <span className="font-bold">{sessionToDelete?.type} session from {sessionToDelete?.date ? format(sessionToDelete.date, 'PPP') : 'this date'}</span>
-              and remove its data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSessionToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSession} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the <span className="font-bold">{sessionToDelete?.type} session from {sessionToDelete?.date ? format(sessionToDelete.date, 'PPP') : 'this date'}</span> and remove its data.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel onClick={() => setSessionToDelete(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteSession} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Dialog open={isFittingLensTypeSelectionOpen} onOpenChange={setIsFittingLensTypeSelectionOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Select Lens Type for Fitting</DialogTitle>
-            <DialogDescription>
-              Choose the type of lens for this fitting session.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Button onClick={() => handleSelectFittingLensType('ROSE_K2_XL')}>
-              ROSE K2 XL
-            </Button>
-            <Button variant="secondary" onClick={() => handleSelectFittingLensType('RGP')}>
-              RGP
-            </Button>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
+        <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Select Lens Type for Fitting</DialogTitle><DialogDescription>Choose the type of lens for this fitting session.</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><Button onClick={() => handleSelectFittingLensType('ROSE_K2_XL')}>ROSE K2 XL</Button><Button variant="secondary" onClick={() => handleSelectFittingLensType('RGP')}>RGP</Button></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose></DialogFooter></DialogContent>
       </Dialog>
 
       <Dialog open={isFollowUpLensTypeSelectionOpen} onOpenChange={setIsFollowUpLensTypeSelectionOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Select Lens Type for Follow-up</DialogTitle>
-            <DialogDescription>
-              Choose the type of lens this follow-up session is for.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Button onClick={() => handleSelectFollowUpLensType('ROSE_K2_XL')}>
-              ROSE K2 XL
-            </Button>
-            <Button variant="secondary" onClick={() => handleSelectFollowUpLensType('RGP')}>
-              RGP
-            </Button>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
+        <DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Select Lens Type for Follow-up</DialogTitle><DialogDescription>Choose the type of lens this follow-up session is for.</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><Button onClick={() => handleSelectFollowUpLensType('ROSE_K2_XL')}>ROSE K2 XL</Button><Button variant="secondary" onClick={() => handleSelectFollowUpLensType('RGP')}>RGP</Button></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose></DialogFooter></DialogContent>
       </Dialog>
 
       <Dialog open={isFollowUpSessionDialogOpen} onOpenChange={setIsFollowUpSessionDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingFollowUpSession ? 'Edit Follow-up Session' : 'Start New Follow-up Session'}</DialogTitle>
-            <DialogDescription>
-              {editingFollowUpSession ? 'Edit the details of this follow-up session.' : 'Enter the details for the new follow-up session.'}
-            </DialogDescription>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{editingFollowUpSession ? 'Edit Follow-up Session' : 'Start New Follow-up Session'}</DialogTitle><DialogDescription>{editingFollowUpSession ? 'Edit the details of this follow-up session.' : 'Enter the details for the new follow-up session.'}</DialogDescription></DialogHeader>
           {patient && (selectedFollowUpLensType || editingFollowUpSession) && (
             <FollowUpSessionForm
               patientName={patient.name}
@@ -404,12 +289,8 @@ const PatientDetailsPage: React.FC = () => {
               lensType={selectedFollowUpLensType || editingFollowUpSession?.lensType}
               initialData={editingFollowUpSession || undefined}
               onSubmit={handleSaveFollowUpSession}
-              onCancel={() => {
-                setIsFollowUpSessionDialogOpen(false);
-                setEditingFollowUpSession(null);
-                setSelectedFollowUpLensType(undefined);
-              }}
-              previousRGPFittingSessions={previousRGPFittingSessionsForForm}
+              onCancel={() => { setIsFollowUpSessionDialogOpen(false); setEditingFollowUpSession(null); setSelectedFollowUpLensType(undefined); }}
+              previousRGPFittingSessions={[]} // This will be handled by the page if needed
             />
           )}
         </DialogContent>
