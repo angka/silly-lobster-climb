@@ -64,20 +64,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(currentUser);
 
         if (currentUser) {
-          // Start fetching role but don't block the initial loading state if it takes too long
-          fetchRole(currentUser.id).finally(() => {
-            if (mounted) setLoading(false);
-          });
-          
-          // Safety timeout: if role fetch takes > 3s, show the app anyway
-          setTimeout(() => {
-            if (mounted && loading) setLoading(false);
-          }, 3000);
-        } else {
-          setLoading(false);
+          await fetchRole(currentUser.id);
         }
       } catch (err) {
         console.error("Init auth failed:", err);
+      } finally {
         if (mounted) setLoading(false);
       }
     };
@@ -93,8 +84,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (event === 'SIGNED_IN' && newUser) {
         setLoading(true);
-        await fetchRole(newUser.id);
-        setLoading(false);
+        try {
+          await fetchRole(newUser.id);
+        } finally {
+          setLoading(false);
+        }
       } else if (event === 'SIGNED_OUT') {
         setRole(null);
         setLoading(false);

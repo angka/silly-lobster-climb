@@ -61,13 +61,20 @@ const DashboardPage: React.FC = () => {
   const fileInputCsvRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const storedPatients = localStorage.getItem('patients');
-    if (storedPatients) {
-      setPatients(JSON.parse(storedPatients).map((p: Patient) => ({
-        ...p,
-        dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
-        dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
-      })));
+    try {
+      const storedPatients = localStorage.getItem('patients');
+      if (storedPatients) {
+        const parsed = JSON.parse(storedPatients);
+        if (Array.isArray(parsed)) {
+          setPatients(parsed.filter(p => p !== null).map((p: Patient) => ({
+            ...p,
+            dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
+            dateOfVisit: p.dateOfVisit ? new Date(p.dateOfVisit) : undefined,
+          })));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load patients from localStorage:", error);
     }
   }, []);
 
@@ -104,12 +111,16 @@ const DashboardPage: React.FC = () => {
     if (patientToDelete) {
       const storedSessions = localStorage.getItem('sessions');
       if (storedSessions) {
-        let existingSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
-          ...s,
-          date: new Date(s.date),
-        }));
-        existingSessions = existingSessions.filter(s => s.patientId !== patientToDelete.id);
-        localStorage.setItem('sessions', JSON.stringify(existingSessions));
+        try {
+          let existingSessions: Session[] = JSON.parse(storedSessions).map((s: any) => ({
+            ...s,
+            date: new Date(s.date),
+          }));
+          existingSessions = existingSessions.filter(s => s.patientId !== patientToDelete.id);
+          localStorage.setItem('sessions', JSON.stringify(existingSessions));
+        } catch (e) {
+          console.error("Failed to update sessions after patient deletion:", e);
+        }
       }
 
       setPatients((prevPatients) =>
