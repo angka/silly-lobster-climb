@@ -8,6 +8,7 @@ interface AuthContextType {
   role: 'admin' | 'user' | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,35 +23,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isInitial) setLoading(true);
     
     try {
-      const rolePromise = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('role, is_banned')
         .eq('id', userId)
         .single();
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
-      );
-
-      const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
-
       if (error) {
         console.warn("Profile fetch error:", error.message);
-        if (!role) setRole('user');
+        // If we can't fetch the profile, we default to 'user' but don't overwrite if already set
+        setRole(prev => prev || 'user');
       } else if (data) {
         if (data.is_banned) {
           await supabase.auth.signOut();
           return;
         }
         setRole(data.role || 'user');
-      } else if (!role) {
-        setRole('user');
       }
     } catch (err) {
       console.error("Auth role check failed:", err);
-      if (!role) setRole('user');
+      setRole(prev => prev || 'user');
     } finally {
       if (isInitial) setLoading(false);
+    }
+  };
+
+  const refreshRole = async () => {
+    if (user) {
+      await fetchRole(user.id, false);
     }
   };
 
@@ -62,10 +62,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!mounted) return;
 
       setSession(initialSession);
-      setUser(initialSession?.user ?? null);
+      const currentUser = initialSession?.user ?? null;
+      setUser(currentUser);
 
-      if (initialSession?.user) {
-        await fetchRole(initialSession.user.id, true);
+      if (currentUser) {
+        await fetchRole(currentUser.id, true);
       } else {
         setLoading(false);
       }
@@ -76,14 +77,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
 
-      const prevUser = user?.id;
+      const newUser = newSession?.user ?? null;
       setSession(newSession);
-      setUser(newSession?.user ?? null);
+      setUser(newUser);
       
-      // Only trigger a loading state if the user has actually changed (new login)
-      // Background refreshes (TOKEN_REFRESHED) shouldn't trigger the loading UI
-      if (event === 'SIGNED_IN' && newSession?.user && newSession.user.id !== prevUser) {
-        await fetchRole(newSession.user.id, true);
+      if (event === 'SIGNED_IN' && newUser) {
+        await fetchRole(newUser.id, true);
       } else if (event === 'SIGNED_OUT') {
         setRole(null);
         setLoading(false);
@@ -96,14 +95,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [user?.id, role]);
+  }, []); // Removed user?.id and role from dependencies to prevent unnecessary re-runs
 
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, role, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user, role, loading, signOut, refreshRole }}>
       {children}
     </AuthContext.Provider>
   );

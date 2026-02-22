@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Shield, LayoutDashboard, Users } from 'lucide-react';
+import { LogOut, Shield, LayoutDashboard, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showSuccess } from '@/utils/toast';
 import { useAuth } from './AuthProvider';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,7 +15,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session, role, signOut } = useAuth();
+  const { session, role, signOut, refreshRole } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
@@ -62,9 +63,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {session && (
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex flex-col items-end text-xs">
-                <span className="font-medium opacity-90">{session.user.email}</span>
-                <span className="capitalize opacity-70">{role}</span>
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-xs font-medium opacity-90">{session.user.email}</span>
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant={role === 'admin' ? 'secondary' : 'outline'} 
+                    className={cn(
+                      "text-[10px] uppercase px-1.5 py-0 h-4",
+                      role === 'admin' ? "bg-amber-400 text-amber-950 border-none" : "text-primary-foreground border-primary-foreground/30"
+                    )}
+                  >
+                    {role || 'Loading...'}
+                  </Badge>
+                  <button 
+                    onClick={() => refreshRole()} 
+                    className="opacity-50 hover:opacity-100 transition-opacity"
+                    title="Refresh Role"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
               <Button 
                 variant="ghost" 
