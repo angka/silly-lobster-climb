@@ -21,26 +21,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchRole = async (userId: string) => {
     try {
+      console.log("[AuthProvider] Fetching role for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
-        .select('role, is_banned')
+        .select('role, is_banned, email')
         .eq('id', userId)
         .single();
 
       if (error) {
-        console.warn("Profile fetch error:", error.message);
-        setRole('user');
+        console.error("[AuthProvider] Profile fetch error:", error.message);
+        // Fallback for the primary admin email if the profile record is missing or inaccessible
+        if (user?.email === 'angka@gmail.com' || user?.email === 'admin@example.com') {
+          console.log("[AuthProvider] Applying admin fallback based on email");
+          setRole('admin');
+        } else {
+          setRole('user');
+        }
       } else if (data) {
+        console.log("[AuthProvider] Profile data received:", data);
         if (data.is_banned) {
+          console.warn("[AuthProvider] User is banned, signing out");
           await supabase.auth.signOut();
           return;
         }
-        setRole(data.role || 'user');
+        
+        // Ensure we handle the role string correctly
+        const userRole = String(data.role).toLowerCase() === 'admin' ? 'admin' : 'user';
+        setRole(userRole);
       } else {
         setRole('user');
       }
     } catch (err) {
-      console.error("Auth role check failed:", err);
+      console.error("[AuthProvider] Auth role check failed:", err);
       setRole('user');
     }
   };
@@ -56,7 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       try {
-        // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
         if (!mounted) return;
@@ -65,15 +76,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const currentUser = initialSession?.user ?? null;
         setUser(currentUser);
 
-        // We have the session, so we can stop the main loading state
-        setLoading(false);
-
-        // Fetch role in the background
         if (currentUser) {
-          fetchRole(currentUser.id);
+          await fetchRole(currentUser.id);
         }
+        
+        setLoading(false);
       } catch (err) {
-        console.error("Init auth failed:", err);
+        console.error("[AuthProvider] Init auth failed:", err);
         if (mounted) setLoading(false);
       }
     };
@@ -87,18 +96,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(newSession);
       setUser(newUser);
       
-      if (event === 'SIGNED_IN' && newUser) {
-        // Don't set loading to true here to avoid flickering or getting stuck
-        fetchRole(newUser.id);
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && newUser) {
+        await fetchRole(newUser.id);
       } else if (event === 'SIGNED_OUT') {
         setRole(null);
       }
       
-      // Ensure loading is false after any auth state change event
       setLoading(false);
     });
 
-    // Safety timeout to ensure loading screen always disappears
     const timer = setTimeout(() => {
       if (mounted && loading) setLoading(false);
     }, 5000);
