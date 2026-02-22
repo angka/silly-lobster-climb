@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Shield, LayoutDashboard, RefreshCw } from 'lucide-react';
+import { LogOut, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showSuccess } from '@/utils/toast';
 import { useAuth } from './AuthProvider';
@@ -14,7 +14,6 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { session, role, signOut, refreshRole } = useAuth();
 
   const handleLogout = async () => {
@@ -22,14 +21,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     showSuccess('Logged out successfully!');
     navigate('/login');
   };
-
-  const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  ];
-
-  if (role === 'admin') {
-    navItems.push({ label: 'Admin', path: '/admin', icon: Shield });
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
@@ -39,26 +30,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/dashboard" className="text-2xl font-bold tracking-tight">
               EMR Contact Lens
             </Link>
-            
-            {session && (
-              <nav className="hidden md:flex items-center gap-1">
-                {navItems.map((item) => (
-                  <Link key={item.path} to={item.path}>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className={cn(
-                        "text-primary-foreground hover:bg-primary-foreground/20",
-                        location.pathname === item.path && "bg-primary-foreground/10"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 mr-2" />
-                      {item.label}
-                    </Button>
-                  </Link>
-                ))}
-              </nav>
-            )}
           </div>
 
           {session && (

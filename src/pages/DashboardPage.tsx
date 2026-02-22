@@ -385,13 +385,6 @@ const DashboardPage: React.FC = () => {
               Patient List ({selectedCategory}) <span className="text-muted-foreground text-2xl">({getCategoryCount()})</span>
             </h1>
             <div className="flex flex-wrap gap-2">
-              {role === 'admin' && (
-                <Link to="/admin">
-                  <Button variant="default" size="sm" className="bg-amber-600 hover:bg-amber-700">
-                    <Shield className="mr-2 h-4 w-4" /> Admin Panel
-                  </Button>
-                </Link>
-              )}
               <Button onClick={handleExportPatients} variant="outline" size="sm">
                 <Download className="mr-2 h-4 w-4" /> JSON
               </Button>
