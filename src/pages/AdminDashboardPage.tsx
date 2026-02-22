@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { format } from 'date-fns';
-import { Shield, UserMinus, UserCheck, Ban, UserPlus, Trash2, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Shield, UserMinus, UserCheck, Ban, UserPlus, Trash2, Loader2, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 
 interface Profile {
@@ -30,29 +30,33 @@ const AdminDashboardPage = () => {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [needsSync, setNeedsSync] = useState(false);
+  const [dbRole, setDbRole] = useState<string | null>(null);
+
+  const checkMyRole = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    setDbRole(data?.role || 'none');
+  };
 
   const fetchProfiles = async () => {
     setLoading(true);
     try {
+      await checkMyRole();
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('last_login', { ascending: false });
 
       if (error) throw error;
-      
       setProfiles(data || []);
-      
-      // If we get an empty list but we are an admin, it might be an RLS issue
-      if ((data || []).length === 0) {
-        setNeedsSync(true);
-      } else {
-        setNeedsSync(false);
-      }
     } catch (error: any) {
       console.error("Error fetching profiles:", error);
-      setNeedsSync(true);
+      // If we can't fetch, it's likely an RLS issue
     } finally {
       setLoading(false);
     }
@@ -61,7 +65,7 @@ const AdminDashboardPage = () => {
   const handleSyncProfile = async () => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.functions.invoke('admin-manage-users', {
+      const { data, error } = await supabase.functions.invoke('admin-manage-users', {
         body: { action: 'sync-profile' }
       });
 
@@ -69,7 +73,7 @@ const AdminDashboardPage = () => {
       
       showSuccess('Admin permissions synchronized with database');
       await refreshRole();
-      fetchProfiles();
+      await fetchProfiles();
     } catch (error: any) {
       showError('Failed to sync permissions: ' + error.message);
     } finally {
@@ -145,6 +149,8 @@ const AdminDashboardPage = () => {
     }
   };
 
+  const isSyncNeeded = dbRole !== 'admin';
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-4">
@@ -159,7 +165,7 @@ const AdminDashboardPage = () => {
             </Button>
             <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button disabled={isSyncNeeded}>
                   <UserPlus className="mr-2 h-4 w-4" /> Add User
                 </Button>
               </DialogTrigger>
@@ -201,24 +207,35 @@ const AdminDashboardPage = () => {
           </div>
         </div>
 
-        {needsSync && (
+        {isSyncNeeded ? (
           <Card className="mb-6 border-amber-200 bg-amber-50">
             <CardContent className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
-                <p className="text-sm text-amber-800">
-                  Your database permissions need to be synchronized to view the user list.
-                </p>
+                <div>
+                  <p className="font-semibold text-amber-900">Database Sync Required</p>
+                  <p className="text-sm text-amber-800">
+                    Your account is recognized as an admin, but your database profile needs to be updated to view the user list.
+                  </p>
+                </div>
               </div>
               <Button 
                 onClick={handleSyncProfile} 
                 disabled={isSubmitting}
-                variant="outline"
-                className="border-amber-300 hover:bg-amber-100"
+                className="bg-amber-600 hover:bg-amber-700 text-white"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                Sync Permissions
+                Sync Now
               </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-6 border-green-200 bg-green-50">
+            <CardContent className="pt-4 pb-4 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <p className="text-sm text-green-800 font-medium">
+                Database permissions are active. You can now manage all users.
+              </p>
             </CardContent>
           </Card>
         )}
@@ -245,10 +262,19 @@ const AdminDashboardPage = () => {
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                     </TableCell>
                   </TableRow>
+                ) : profiles.length <= 1 && isSyncNeeded ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <Shield className="h-12 w-12 opacity-20" />
+                        <p>Please click "Sync Now" above to view the full user list.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : profiles.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      {needsSync ? "Sync your permissions above to see users." : "No users found."}
+                      No users found.
                     </TableCell>
                   </TableRow>
                 ) : profiles.map((profile) => (

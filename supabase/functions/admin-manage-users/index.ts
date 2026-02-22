@@ -31,6 +31,31 @@ serve(async (req) => {
 
     const isAdminEmail = user.email === 'angka@gmail.com' || user.email === 'admin@example.com';
     
+    const { action, email, password, userId } = await req.json()
+
+    // Special action to fix the admin's own profile
+    if (action === 'sync-profile') {
+      if (isAdminEmail) {
+        // Use upsert to ensure the profile exists and has the admin role
+        const { error: upsertError } = await supabaseAdmin
+          .from('profiles')
+          .upsert({ 
+            id: user.id, 
+            email: user.email,
+            role: 'admin',
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+        
+        if (upsertError) throw upsertError;
+        
+        return new Response(JSON.stringify({ success: true, role: 'admin' }), { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+      throw new Error('Unauthorized for sync');
+    }
+
+    // For other actions, verify admin status in DB
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -39,25 +64,6 @@ serve(async (req) => {
 
     const isDbAdmin = profile?.role === 'admin';
 
-    // If they are an admin by email but not in DB, we allow the 'sync-profile' action
-    const { action, email, password, userId } = await req.json()
-
-    if (action === 'sync-profile') {
-      if (isAdminEmail) {
-        const { error: updateError } = await supabaseAdmin
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', user.id);
-        
-        if (updateError) throw updateError;
-        return new Response(JSON.stringify({ success: true, role: 'admin' }), { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        });
-      }
-      throw new Error('Unauthorized for sync');
-    }
-
-    // For other actions, they must be a verified admin (either by email or DB)
     if (!isAdminEmail && !isDbAdmin) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 403, 
@@ -73,7 +79,7 @@ serve(async (req) => {
       })
       if (error) throw error;
       
-      // Ensure profile is created immediately if trigger is slow
+      // Ensure profile is created immediately
       await supabaseAdmin.from('profiles').insert({
         id: data.user.id,
         email: data.user.email,
