@@ -16,12 +16,13 @@ export interface PatientFormData {
   gender: 'Male' | 'Female' | 'Other' | '';
   contactNumber: string;
   doctorName: string;
+  hospital: string; // New field
   address: string;
   lensCategory: 'RGP' | 'Scleral lens' | '';
   medicalRecordNumber: string;
   notes?: string;
   dateOfVisit?: Date;
-  diagnosis?: string; // New field for diagnosis
+  diagnosis?: string;
 }
 
 interface PatientFormProps {
@@ -38,18 +39,19 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
   const [gender, setGender] = useState<PatientFormData['gender']>(initialData?.gender || '');
   const [contactNumber, setContactNumber] = useState(initialData?.contactNumber || '');
   const [doctorName, setDoctorName] = useState(initialData?.doctorName || '');
+  const [hospital, setHospital] = useState(initialData?.hospital || ''); // New state
   const [address, setAddress] = useState(initialData?.address || '');
   const [lensCategory, setLensCategory] = useState<PatientFormData['lensCategory']>(initialData?.lensCategory || '');
   const [medicalRecordNumber, setMedicalRecordNumber] = useState(initialData?.medicalRecordNumber || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [dateOfVisit, setDateOfVisit] = useState<Date | undefined>(initialData?.dateOfVisit);
-  const [diagnosis, setDiagnosis] = useState(initialData?.diagnosis || ''); // New state for diagnosis
+  const [diagnosis, setDiagnosis] = useState(initialData?.diagnosis || '');
 
   useEffect(() => {
     if (initialData?.dateOfBirth) {
       const dob = initialData.dateOfBirth;
       setDay(dob.getDate().toString());
-      setMonth((dob.getMonth() + 1).toString()); // Month is 0-indexed
+      setMonth((dob.getMonth() + 1).toString());
       setYear(dob.getFullYear().toString());
     }
     if (initialData?.lensCategory) {
@@ -64,6 +66,9 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
     if (initialData?.diagnosis) {
       setDiagnosis(initialData.diagnosis);
     }
+    if (initialData?.hospital) {
+      setHospital(initialData.hospital);
+    }
   }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,15 +79,13 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
     const monthNum = parseInt(month, 10);
     const yearNum = parseInt(year, 10);
 
-    // Basic validation for date components
     if (
       !isNaN(dayNum) && !isNaN(monthNum) && !isNaN(yearNum) &&
       dayNum > 0 && dayNum <= 31 &&
       monthNum > 0 && monthNum <= 12 &&
-      yearNum >= 1900 && yearNum <= new Date().getFullYear() + 5 // A reasonable year range
+      yearNum >= 1900 && yearNum <= new Date().getFullYear() + 5
     ) {
       const tempDate = new Date(yearNum, monthNum - 1, dayNum);
-      // Check to ensure the date components match, preventing rollovers (e.g., Feb 30 becoming Mar 1)
       if (
         tempDate.getFullYear() === yearNum &&
         tempDate.getMonth() === (monthNum - 1) &&
@@ -98,12 +101,13 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       gender,
       contactNumber,
       doctorName,
+      hospital, // Pass hospital
       address,
       lensCategory,
       medicalRecordNumber,
       notes,
       dateOfVisit,
-      diagnosis, // Pass diagnosis
+      diagnosis,
     });
   };
 
@@ -116,6 +120,10 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       <div>
         <Label htmlFor="medicalRecordNumber">Medical Record Number</Label>
         <Input id="medicalRecordNumber" value={medicalRecordNumber} onChange={(e) => setMedicalRecordNumber(e.target.value)} required />
+      </div>
+      <div>
+        <Label htmlFor="hospital">Hospital</Label>
+        <Input id="hospital" value={hospital} onChange={(e) => setHospital(e.target.value)} placeholder="e.g., General Hospital" />
       </div>
       <div>
         <Label htmlFor="diagnosis">Diagnosis</Label>

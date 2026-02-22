@@ -200,6 +200,10 @@ const PatientDetailsPage: React.FC = () => {
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <p className="text-sm font-medium text-muted-foreground">Hospital</p>
+                  <p className="text-base">{patient.hospital || 'N/A'}</p>
+                </div>
+                <div>
                   <p className="text-sm font-medium text-muted-foreground">Diagnosis</p>
                   <p className="text-base">{patient.diagnosis || 'N/A'}</p>
                 </div>

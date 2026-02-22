@@ -181,7 +181,7 @@ const DashboardPage: React.FC = () => {
       }
 
       const headers = [
-        'ID', 'Name', 'Medical Record Number', 'Diagnosis', 'Date of Birth', 'Gender',
+        'ID', 'Name', 'Medical Record Number', 'Hospital', 'Diagnosis', 'Date of Birth', 'Gender',
         'Contact Number', 'Doctor Name', 'Address', 'Lens Category', 'Notes', 'Date of Visit'
       ];
 
@@ -193,6 +193,7 @@ const DashboardPage: React.FC = () => {
           patient.id,
           `"${patient.name.replace(/"/g, '""')}"`,
           patient.medicalRecordNumber,
+          `"${(patient.hospital || '').replace(/"/g, '""')}"`,
           `"${(patient.diagnosis || '').replace(/"/g, '""')}"`,
           patient.dateOfBirth ? patient.dateOfBirth.toISOString().split('T')[0] : '',
           patient.gender || '',
@@ -303,6 +304,7 @@ const DashboardPage: React.FC = () => {
               case 'ID': patientData.id = value; break;
               case 'Name': patientData.name = value; break;
               case 'MedicalRecordNumber': patientData.medicalRecordNumber = value; break;
+              case 'Hospital': patientData.hospital = value; break;
               case 'Diagnosis': patientData.diagnosis = value; break;
               case 'DateofBirth': patientData.dateOfBirth = value ? new Date(value) : undefined; break;
               case 'Gender': patientData.gender = value as any; break;
@@ -334,6 +336,7 @@ const DashboardPage: React.FC = () => {
     const matchesSearch = searchQuery.toLowerCase() === '' ||
                           patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           patient.medicalRecordNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (patient.hospital && patient.hospital.toLowerCase().includes(searchQuery.toLowerCase())) ||
                           (patient.diagnosis && patient.diagnosis.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchesCategory && matchesSearch;
@@ -434,7 +437,7 @@ const DashboardPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search patients by name, MRN, or diagnosis..."
+              placeholder="Search patients by name, MRN, hospital, or diagnosis..."
               className="pl-9 pr-4 py-2 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -447,6 +450,7 @@ const DashboardPage: React.FC = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>MRN</TableHead>
+                  <TableHead>Hospital</TableHead>
                   <TableHead>Diagnosis</TableHead>
                   <TableHead>Lens Category</TableHead>
                   <TableHead>Date of Visit</TableHead>
@@ -456,7 +460,7 @@ const DashboardPage: React.FC = () => {
               <TableBody>
                 {filteredPatients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                       No patients found.
                     </TableCell>
                   </TableRow>
@@ -469,6 +473,7 @@ const DashboardPage: React.FC = () => {
                         </Link>
                       </TableCell>
                       <TableCell>{patient.medicalRecordNumber}</TableCell>
+                      <TableCell>{patient.hospital || 'N/A'}</TableCell>
                       <TableCell>{patient.diagnosis || 'N/A'}</TableCell>
                       <TableCell>{patient.lensCategory || 'N/A'}</TableCell>
                       <TableCell>{patient.dateOfVisit ? patient.dateOfVisit.toLocaleDateString() : 'N/A'}</TableCell>
