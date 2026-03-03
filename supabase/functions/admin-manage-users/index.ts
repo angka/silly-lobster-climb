@@ -29,10 +29,12 @@ serve(async (req) => {
     
     if (authError || !user) throw new Error('Invalid session')
 
+    // Check if the user is one of the hardcoded admins
     const isAdminEmail = user.email === 'angka@gmail.com' || user.email === 'admin@example.com'
     
     const { action, email, password, userId, newPassword } = await req.json()
 
+    // Action to sync the current user's profile to admin if they have the admin email
     if (action === 'sync-profile') {
       if (!isAdminEmail) throw new Error('Unauthorized for sync')
       const { error } = await supabaseAdmin
@@ -48,6 +50,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    // Check database role for other actions
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -72,7 +75,7 @@ serve(async (req) => {
       
       if (error) throw error
       
-      // Using upsert to handle profile creation correctly
+      // Create the profile for the new user
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .upsert({
