@@ -77,12 +77,20 @@ const FittingSessionPage: React.FC = () => {
     }
 
     try {
+      // Defensive check: ensure date is a Date object
+      const sessionDate = data.date instanceof Date ? data.date : new Date(data.date);
+      
+      // Also ensure nextFollowUpDate is handled if it exists
+      if (data.nextFollowUpDate && !(data.nextFollowUpDate instanceof Date)) {
+        data.nextFollowUpDate = new Date(data.nextFollowUpDate);
+      }
+
       const sessionPayload = {
         patient_id: id,
         user_id: user.id,
         type: 'Fitting',
         lens_type: lensType,
-        date: data.date.toISOString(),
+        date: sessionDate.toISOString(),
         data: data,
       };
 

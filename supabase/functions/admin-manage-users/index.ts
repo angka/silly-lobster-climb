@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,123 +7,106 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
     if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error('Missing Supabase environment variables (URL or Service Role Key)');
+      throw new Error('Missing environment variables')
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    // Create admin client with service role key
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
+    // Get the user from the request token to verify admin status
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header provided');
-    }
+    if (!authHeader) throw new Error('No authorization header')
     
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     
-    if (authError || !user) {
-      throw new Error('Authentication failed: Invalid token or session expired');
-    }
+    if (authError || !user) throw new Error('Invalid session')
 
-    const isAdminEmail = user.email === 'angka@gmail.com' || user.email === 'admin@example.com';
+    const isAdminEmail = user.email === 'angka@gmail.com' || user.email === 'admin@example.com'
     
     const { action, email, password, userId, newPassword } = await req.json()
 
-    // Special action to fix the admin's own profile
+    // Action: Sync Admin Profile
     if (action === 'sync-profile') {
-      if (isAdminEmail) {
-        const { error: upsertError } = await supabaseAdmin
-          .from('profiles')
-          .upsert({ 
-            id: user.id, 
-            email: user.email,
-            role: 'admin',
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'id' });
-        
-        if (upsertError) throw upsertError;
-        
-        return new Response(JSON.stringify({ success: true, role: 'admin' }), { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        });
-      }
-      throw new Error('Unauthorized: Only designated admin emails can sync profiles');
+      if (!isAdminEmail) throw new Error('Unauthorized for sync')
+      const { error } = await supabaseAdmin
+        .from('profiles')
+        .upsert({ 
+          id: user.id, 
+          email: user.email,
+          role: 'admin',
+          updated_at: new Date().toISOString()
+        })
+      
+      if (error) throw error
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // For other actions, verify admin status in DB
-    const { data: profile, error: profileFetchError } = await supabaseAdmin
+    // Verify admin status in DB for other actions
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .maybeSingle();
+      .single()
 
-    const isDbAdmin = profile?.role === 'admin';
-    const isUpdatingSelf = userId === user.id;
+    const isDbAdmin = profile?.role === 'admin'
 
-    if (!isAdminEmail && !isDbAdmin && !isUpdatingSelf) {
-      return new Response(JSON.stringify({ error: 'Access Denied: Admin privileges required for this action' }), { 
+    if (!isAdminEmail && !isDbAdmin) {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), { 
         status: 403, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
+    // Action: Create User
     if (action === 'create') {
-      const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true
       })
       
-      if (createError) {
-        return new Response(JSON.stringify({ error: createError.message }), { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        })
-      }
+      if (error) throw error
       
-      // Ensure profile is created
-      const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
+      await supabaseAdmin.from('profiles').upsert({
         id: data.user.id,
         email: data.user.email,
         role: 'user'
-      });
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-      }
-
-      return new Response(JSON.stringify({ success: true, user: data.user }), { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
+
+      return new Response(JSON.stringify({ success: true, user: data.user }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    // Action: Delete User
     if (action === 'delete') {
-      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-      if (deleteError) throw deleteError;
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+      if (error) throw error
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    // Action: Update Password
     if (action === 'update-password') {
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: newPassword
-      });
-      if (updateError) throw updateError;
+      })
+      if (error) throw error
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    throw new Error(`Invalid action: ${action}`)
+    throw new Error('Invalid action')
   } catch (error: any) {
-    console.error("Edge Function Error:", error.message);
-    return new Response(JSON.stringify({ error: error.message || 'An internal server error occurred' }), { 
-      status: 500, 
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 400, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   }
