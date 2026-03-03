@@ -12,21 +12,25 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Missing Supabase environment variables (URL or Service Role Key)');
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      throw new Error('No authorization header');
+      throw new Error('No authorization header provided');
     }
     
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
-      throw new Error('Invalid token');
+      throw new Error('Authentication failed: Invalid token or session expired');
     }
 
     const isAdminEmail = user.email === 'angka@gmail.com' || user.email === 'admin@example.com';
@@ -51,64 +55,75 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         });
       }
-      throw new Error('Unauthorized for sync');
+      throw new Error('Unauthorized: Only designated admin emails can sync profiles');
     }
 
     // For other actions, verify admin status in DB
-    const { data: profile } = await supabaseAdmin
+    const { data: profile, error: profileFetchError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     const isDbAdmin = profile?.role === 'admin';
-
-    // Allow users to update their OWN password via this function if needed, 
-    // but primarily this is for admins managing others.
     const isUpdatingSelf = userId === user.id;
 
     if (!isAdminEmail && !isDbAdmin && !isUpdatingSelf) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+      return new Response(JSON.stringify({ error: 'Access Denied: Admin privileges required for this action' }), { 
         status: 403, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
     if (action === 'create') {
-      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true
       })
-      if (error) throw error;
       
-      await supabaseAdmin.from('profiles').insert({
+      if (createError) {
+        return new Response(JSON.stringify({ error: createError.message }), { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+      }
+      
+      // Ensure profile is created
+      const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
         id: data.user.id,
         email: data.user.email,
         role: 'user'
-      }).onConflict('id').ignore();
+      });
 
-      return new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+      }
+
+      return new Response(JSON.stringify({ success: true, user: data.user }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
     }
 
     if (action === 'delete') {
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
-      if (error) throw error;
+      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+      if (deleteError) throw deleteError;
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     if (action === 'update-password') {
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: newPassword
       });
-      if (error) throw error;
+      if (updateError) throw updateError;
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    throw new Error('Invalid action')
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 400, 
+    throw new Error(`Invalid action: ${action}`)
+  } catch (error: any) {
+    console.error("Edge Function Error:", error.message);
+    return new Response(JSON.stringify({ error: error.message || 'An internal server error occurred' }), { 
+      status: 500, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   }

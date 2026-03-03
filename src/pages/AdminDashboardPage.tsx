@@ -80,17 +80,21 @@ const AdminDashboardPage = () => {
   const handleSyncProfile = async () => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.functions.invoke('admin-manage-users', {
+      const { data, error } = await supabase.functions.invoke('admin-manage-users', {
         body: { action: 'sync-profile' }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to parse the error body if it's a function error
+        const errorBody = await error.context?.json().catch(() => null);
+        throw new Error(errorBody?.error || error.message || 'Sync failed');
+      }
       
       showSuccess('Admin permissions synchronized');
       await refreshRole();
       await fetchProfiles();
     } catch (error: any) {
-      showError('Sync failed: ' + error.message);
+      showError(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -104,11 +108,15 @@ const AdminDashboardPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.functions.invoke('admin-manage-users', {
+      const { data, error } = await supabase.functions.invoke('admin-manage-users', {
         body: { action: 'create', email: newEmail, password: newPassword }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to parse the error body to show the specific reason (e.g., "User already exists")
+        const errorBody = await error.context?.json().catch(() => null);
+        throw new Error(errorBody?.error || error.message || 'Failed to create user');
+      }
       
       showSuccess('User created successfully');
       setIsAddUserOpen(false);
@@ -116,7 +124,7 @@ const AdminDashboardPage = () => {
       setNewPassword('');
       fetchProfiles();
     } catch (error: any) {
-      showError(error.message || 'Failed to create user');
+      showError(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -132,14 +140,17 @@ const AdminDashboardPage = () => {
         body: { action: 'update-password', userId: resetUserId, newPassword: resetPassword }
       });
 
-      if (error) throw error;
+      if (error) {
+        const errorBody = await error.context?.json().catch(() => null);
+        throw new Error(errorBody?.error || error.message || 'Failed to reset password');
+      }
       
       showSuccess('Password reset successfully');
       setIsResetOpen(false);
       setResetPassword('');
       setResetUserId(null);
     } catch (error: any) {
-      showError(error.message || 'Failed to reset password');
+      showError(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -151,12 +162,15 @@ const AdminDashboardPage = () => {
         body: { action: 'delete', userId }
       });
 
-      if (error) throw error;
+      if (error) {
+        const errorBody = await error.context?.json().catch(() => null);
+        throw new Error(errorBody?.error || error.message || 'Failed to delete user');
+      }
       
       showSuccess('User deleted successfully');
       fetchProfiles();
     } catch (error: any) {
-      showError(error.message || 'Failed to delete user');
+      showError(error.message);
     }
   };
 
@@ -253,8 +267,8 @@ const AdminDashboardPage = () => {
                 <div>
                   <p className="font-semibold text-amber-900">Database Sync Required</p>
                   <p className="text-sm text-amber-800">
-                    Your database profile needs to be updated to 'admin' to view the user list. 
-                    If you've already run the SQL, click "Sync Now" to refresh your session.
+                    Your database profile needs to be updated to 'admin' to manage users. 
+                    Click "Sync Now" to update your profile permissions.
                   </p>
                 </div>
               </div>
