@@ -18,6 +18,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface Patient extends PatientFormData {
   id: string;
   user_id: string;
+  profiles?: {
+    email: string;
+  };
 }
 
 interface Session {
@@ -63,12 +66,12 @@ const DashboardPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('patients')
-        .select('*')
+        .select('*, profiles(email)')
         .order('name');
 
       if (error) throw error;
       
-      setPatients(data.map(p => ({
+      setPatients(data.map((p: any) => ({
         ...p,
         dateOfBirth: p.date_of_birth ? new Date(p.date_of_birth) : undefined,
         dateOfVisit: p.date_of_visit ? new Date(p.date_of_visit) : undefined,
@@ -134,7 +137,7 @@ const DashboardPage: React.FC = () => {
           address: data.address,
           lens_category: data.lensCategory,
           notes: data.notes,
-          date_of_visit: data.dateOfVisit?.toISOString().split('T')[0],
+          date_of_visit: data.date_of_visit?.toISOString().split('T')[0],
           updated_at: new Date().toISOString(),
         })
         .eq('id', editingPatient.id);
@@ -468,7 +471,7 @@ const DashboardPage: React.FC = () => {
                   <TableHead>Hospital</TableHead>
                   <TableHead>Diagnosis</TableHead>
                   <TableHead>Lens Category</TableHead>
-                  <TableHead>Date of Visit</TableHead>
+                  <TableHead>Created By</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -497,7 +500,9 @@ const DashboardPage: React.FC = () => {
                       <TableCell>{patient.hospital || 'N/A'}</TableCell>
                       <TableCell>{patient.diagnosis || 'N/A'}</TableCell>
                       <TableCell>{patient.lensCategory || 'N/A'}</TableCell>
-                      <TableCell>{patient.dateOfVisit ? patient.dateOfVisit.toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {patient.profiles?.email || 'Unknown'}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button
