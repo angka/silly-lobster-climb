@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -20,10 +19,8 @@ serve(async (req) => {
       throw new Error('Missing environment variables')
     }
 
-    // Create admin client with service role key
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
-    // Get the user from the request token to verify admin status
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('No authorization header')
     
@@ -36,7 +33,6 @@ serve(async (req) => {
     
     const { action, email, password, userId, newPassword } = await req.json()
 
-    // Action: Sync Admin Profile
     if (action === 'sync-profile') {
       if (!isAdminEmail) throw new Error('Unauthorized for sync')
       const { error } = await supabaseAdmin
@@ -52,7 +48,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Verify admin status in DB for other actions
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -68,7 +63,6 @@ serve(async (req) => {
       })
     }
 
-    // Action: Create User
     if (action === 'create') {
       const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -78,23 +72,27 @@ serve(async (req) => {
       
       if (error) throw error
       
-      await supabaseAdmin.from('profiles').upsert({
-        id: data.user.id,
-        email: data.user.email,
-        role: 'user'
-      })
+      // Use upsert to handle profile creation correctly
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          email: data.user.email,
+          role: 'user',
+          updated_at: new Date().toISOString()
+        })
+
+      if (profileError) throw profileError
 
       return new Response(JSON.stringify({ success: true, user: data.user }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Action: Delete User
     if (action === 'delete') {
       const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
       if (error) throw error
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Action: Update Password
     if (action === 'update-password') {
       const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: newPassword
