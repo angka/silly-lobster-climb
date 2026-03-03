@@ -72,6 +72,7 @@ serve(async (req) => {
       
       if (error) throw error
       
+      // Using upsert to handle profile creation correctly
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .upsert({
