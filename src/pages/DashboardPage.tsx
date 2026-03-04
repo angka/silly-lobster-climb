@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Edit, Trash2, Search, Download, Upload, Shield, Settings, User, KeyRound, Loader2, Database } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { PlusCircle, Edit, Trash2, Search, Download, Upload, Shield, Settings, User, KeyRound, Loader2, Database, CheckSquare, X } from 'lucide-react';
 import PatientForm, { PatientFormData } from '@/components/PatientForm';
 import Layout from '@/components/Layout';
 import { showSuccess, showError } from '@/utils/toast';
@@ -21,16 +24,6 @@ interface Patient extends PatientFormData {
   profiles?: {
     email: string;
   };
-}
-
-interface Session {
-  id: string;
-  patient_id: string;
-  user_id: string;
-  type: string;
-  lens_type: string;
-  date: string;
-  data: any;
 }
 
 const parseCsvRow = (row: string): string[] => {
@@ -58,6 +51,13 @@ const DashboardPage: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [availableOwners, setAvailableOwners] = useState<{ id: string; email: string }[]>([]);
+  
+  // Bulk selection state
+  const [selectedPatientIds, setSelectedPatientIds] = useState<string[]>([]);
+  const [isBulkReassignOpen, setIsBulkReassignOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [bulkNewOwnerId, setBulkNewOwnerId] = useState('');
+  const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
 
   const fileInputJsonRef = useRef<HTMLInputElement>(null);
   const fileInputCsvRef = useRef<HTMLInputElement>(null);
@@ -192,6 +192,66 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  // Bulk Actions
+  const handleToggleSelectAll = () => {
+    if (selectedPatientIds.length === filteredPatients.length) {
+      setSelectedPatientIds([]);
+    } else {
+      setSelectedPatientIds(filteredPatients.map(p => p.id));
+    }
+  };
+
+  const handleToggleSelectPatient = (id: string) => {
+    setSelectedPatientIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPatientIds.length === 0) return;
+    setIsBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .in('id', selectedPatientIds);
+
+      if (error) throw error;
+
+      showSuccess(`${selectedPatientIds.length} patients deleted successfully!`);
+      setSelectedPatientIds([]);
+      setIsBulkDeleteOpen(false);
+      fetchPatients();
+    } catch (error: any) {
+      showError(error.message || 'Failed to delete patients');
+    } finally {
+      setIsBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkReassign = async () => {
+    if (selectedPatientIds.length === 0 || !bulkNewOwnerId) return;
+    setIsBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .update({ user_id: bulkNewOwnerId, updated_at: new Date().toISOString() })
+        .in('id', selectedPatientIds);
+
+      if (error) throw error;
+
+      showSuccess(`${selectedPatientIds.length} patients reassigned successfully!`);
+      setSelectedPatientIds([]);
+      setIsBulkReassignOpen(false);
+      setBulkNewOwnerId('');
+      fetchPatients();
+    } catch (error: any) {
+      showError(error.message || 'Failed to reassign patients');
+    } finally {
+      setIsBulkActionLoading(false);
+    }
+  };
+
   const handleExportAllData = async () => {
     setIsExporting(true);
     try {
@@ -238,14 +298,10 @@ const DashboardPage: React.FC = () => {
           throw new Error('Invalid backup file format');
         }
 
-        // 1. Import Patients
-        // We'll map old IDs to new IDs to maintain session relationships
         const idMap: Record<string, string> = {};
         
         for (const p of content.patients) {
           const { id: oldId, created_at, updated_at, ...patientData } = p;
-          
-          // Preserve original user_id if it exists, otherwise use current user
           const finalPatientData = {
             ...patientData,
             user_id: patientData.user_id || user.id
@@ -261,15 +317,13 @@ const DashboardPage: React.FC = () => {
           idMap[oldId] = newPatient.id;
         }
 
-        // 2. Import Sessions
         if (content.sessions && Array.isArray(content.sessions)) {
           const sessionsToInsert = content.sessions
-            .filter((s: any) => idMap[s.patient_id]) // Only sessions for patients we just imported
+            .filter((s: any) => idMap[s.patient_id])
             .map((s: any) => {
               const { id, created_at, ...sessionData } = s;
               return {
                 ...sessionData,
-                // Preserve original user_id if it exists, otherwise use current user
                 user_id: sessionData.user_id || user.id,
                 patient_id: idMap[s.patient_id]
               };
@@ -344,7 +398,7 @@ const DashboardPage: React.FC = () => {
         const patientsToInsert = lines.slice(1).map(line => {
           const values = parseCsvRow(line);
           return {
-            user_id: user.id, // CSV import always assigns to current user as we don't have user IDs in CSV
+            user_id: user.id,
             name: values[0],
             medical_record_number: values[1],
             hospital: values[2],
@@ -496,10 +550,57 @@ const DashboardPage: React.FC = () => {
             />
           </div>
 
+          {/* Bulk Actions Bar */}
+          {role === 'admin' && selectedPatientIds.length > 0 && (
+            <div className="bg-primary/10 border border-primary/20 rounded-md p-3 mb-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="h-5 w-5 text-primary" />
+                <span className="font-medium text-sm">
+                  {selectedPatientIds.length} patient{selectedPatientIds.length > 1 ? 's' : ''} selected
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSelectedPatientIds([])}
+                  className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4 mr-1" /> Clear
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8"
+                  onClick={() => setIsBulkReassignOpen(true)}
+                >
+                  <User className="h-4 w-4 mr-1" /> Reassign
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="h-8"
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" /> Delete
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-md border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
+                  {role === 'admin' && (
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedPatientIds.length === filteredPatients.length && filteredPatients.length > 0}
+                        onCheckedChange={handleToggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Name</TableHead>
                   <TableHead>MRN</TableHead>
                   <TableHead>Hospital</TableHead>
@@ -512,19 +613,28 @@ const DashboardPage: React.FC = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={role === 'admin' ? 8 : 7} className="h-24 text-center">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ) : filteredPatients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={role === 'admin' ? 8 : 7} className="h-24 text-center text-muted-foreground">
                       No patients found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredPatients.map((patient) => (
-                    <TableRow key={patient.id}>
+                    <TableRow key={patient.id} className={selectedPatientIds.includes(patient.id) ? "bg-primary/5" : ""}>
+                      {role === 'admin' && (
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedPatientIds.includes(patient.id)}
+                            onCheckedChange={() => handleToggleSelectPatient(patient.id)}
+                            aria-label={`Select ${patient.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">
                         <Link to={`/patients/${patient.id}`} className="hover:underline">
                           {patient.name}
@@ -569,6 +679,68 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Bulk Reassign Dialog */}
+      <Dialog open={isBulkReassignOpen} onOpenChange={setIsBulkReassignOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Reassign Ownership</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              You are reassigning <span className="font-bold text-foreground">{selectedPatientIds.length}</span> patient records to a new owner.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="bulk-owner">New Owner</Label>
+              <Select value={bulkNewOwnerId} onValueChange={setBulkNewOwnerId}>
+                <SelectTrigger id="bulk-owner">
+                  <SelectValue placeholder="Select new owner" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableOwners.map((owner) => (
+                    <SelectItem key={owner.id} value={owner.id}>
+                      {owner.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkReassignOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleBulkReassign} 
+              disabled={!bulkNewOwnerId || isBulkActionLoading}
+            >
+              {isBulkActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reassign All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <span className="font-bold text-foreground">{selectedPatientIds.length}</span> selected patient records and all their associated sessions. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isBulkActionLoading}
+            >
+              {isBulkActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
