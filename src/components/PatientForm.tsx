@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, User } from 'lucide-react';
 
 export interface PatientFormData {
   name: string;
@@ -16,22 +16,31 @@ export interface PatientFormData {
   gender: 'Male' | 'Female' | 'Other' | '';
   contactNumber: string;
   doctorName: string;
-  hospital: string; // New field
+  hospital: string;
   address: string;
   lensCategory: 'RGP' | 'Scleral lens' | '';
   medicalRecordNumber: string;
   notes?: string;
   dateOfVisit?: Date;
   diagnosis?: string;
+  user_id?: string; // Added for ownership reassignment
 }
 
 interface PatientFormProps {
   initialData?: PatientFormData;
   onSubmit: (data: PatientFormData) => void;
   onCancel: () => void;
+  isAdmin?: boolean;
+  availableOwners?: { id: string; email: string }[];
 }
 
-const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCancel }) => {
+const PatientForm: React.FC<PatientFormProps> = ({ 
+  initialData, 
+  onSubmit, 
+  onCancel, 
+  isAdmin = false, 
+  availableOwners = [] 
+}) => {
   const [name, setName] = useState(initialData?.name || '');
   const [day, setDay] = useState('');
   const [month, setMonth] = useState('');
@@ -39,13 +48,14 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
   const [gender, setGender] = useState<PatientFormData['gender']>(initialData?.gender || '');
   const [contactNumber, setContactNumber] = useState(initialData?.contactNumber || '');
   const [doctorName, setDoctorName] = useState(initialData?.doctorName || '');
-  const [hospital, setHospital] = useState(initialData?.hospital || ''); // New state
+  const [hospital, setHospital] = useState(initialData?.hospital || '');
   const [address, setAddress] = useState(initialData?.address || '');
   const [lensCategory, setLensCategory] = useState<PatientFormData['lensCategory']>(initialData?.lensCategory || '');
   const [medicalRecordNumber, setMedicalRecordNumber] = useState(initialData?.medicalRecordNumber || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [dateOfVisit, setDateOfVisit] = useState<Date | undefined>(initialData?.dateOfVisit);
   const [diagnosis, setDiagnosis] = useState(initialData?.diagnosis || '');
+  const [ownerId, setOwnerId] = useState(initialData?.user_id || '');
 
   useEffect(() => {
     if (initialData?.dateOfBirth) {
@@ -54,21 +64,12 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       setMonth((dob.getMonth() + 1).toString());
       setYear(dob.getFullYear().toString());
     }
-    if (initialData?.lensCategory) {
-      setLensCategory(initialData.lensCategory);
-    }
-    if (initialData?.medicalRecordNumber) {
-      setMedicalRecordNumber(initialData.medicalRecordNumber);
-    }
-    if (initialData?.dateOfVisit) {
-      setDateOfVisit(initialData.dateOfVisit);
-    }
-    if (initialData?.diagnosis) {
-      setDiagnosis(initialData.diagnosis);
-    }
-    if (initialData?.hospital) {
-      setHospital(initialData.hospital);
-    }
+    if (initialData?.lensCategory) setLensCategory(initialData.lensCategory);
+    if (initialData?.medicalRecordNumber) setMedicalRecordNumber(initialData.medicalRecordNumber);
+    if (initialData?.dateOfVisit) setDateOfVisit(initialData.dateOfVisit);
+    if (initialData?.diagnosis) setDiagnosis(initialData.diagnosis);
+    if (initialData?.hospital) setHospital(initialData.hospital);
+    if (initialData?.user_id) setOwnerId(initialData.user_id);
   }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,18 +102,42 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSubmit, onCanc
       gender,
       contactNumber,
       doctorName,
-      hospital, // Pass hospital
+      hospital,
       address,
       lensCategory,
       medicalRecordNumber,
       notes,
       dateOfVisit,
       diagnosis,
+      user_id: ownerId || undefined,
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4">
+      {isAdmin && availableOwners.length > 0 && (
+        <div className="bg-primary/5 p-3 rounded-md border border-primary/10 mb-4">
+          <Label htmlFor="owner" className="flex items-center gap-2 text-primary mb-1.5">
+            <User className="h-4 w-4" /> Patient Owner (Admin Only)
+          </Label>
+          <Select value={ownerId} onValueChange={setOwnerId}>
+            <SelectTrigger id="owner" className="bg-background">
+              <SelectValue placeholder="Select owner" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableOwners.map((owner) => (
+                <SelectItem key={owner.id} value={owner.id}>
+                  {owner.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Changing the owner will move this patient to the selected user's list.
+          </p>
+        </div>
+      )}
+
       <div>
         <Label htmlFor="name">Patient Name</Label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />

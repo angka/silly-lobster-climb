@@ -57,6 +57,7 @@ const DashboardPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [availableOwners, setAvailableOwners] = useState<{ id: string; email: string }[]>([]);
 
   const fileInputJsonRef = useRef<HTMLInputElement>(null);
   const fileInputCsvRef = useRef<HTMLInputElement>(null);
@@ -87,15 +88,33 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const fetchProfiles = async () => {
+    if (role !== 'admin') return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .order('email');
+      
+      if (error) throw error;
+      setAvailableOwners(data || []);
+    } catch (error: any) {
+      console.error("Error fetching profiles for owner selection:", error);
+    }
+  };
+
   useEffect(() => {
-    if (user) fetchPatients();
-  }, [user]);
+    if (user) {
+      fetchPatients();
+      if (role === 'admin') fetchProfiles();
+    }
+  }, [user, role]);
 
   const handleAddPatient = async (data: PatientFormData) => {
     if (!user) return;
     try {
       const { error } = await supabase.from('patients').insert({
-        user_id: user.id,
+        user_id: data.user_id || user.id,
         name: data.name,
         medical_record_number: data.medicalRecordNumber,
         hospital: data.hospital,
@@ -137,7 +156,8 @@ const DashboardPage: React.FC = () => {
           address: data.address,
           lens_category: data.lensCategory,
           notes: data.notes,
-          date_of_visit: data.date_of_visit?.toISOString().split('T')[0],
+          date_of_visit: data.dateOfVisit?.toISOString().split('T')[0],
+          user_id: data.user_id || editingPatient.user_id,
           updated_at: new Date().toISOString(),
         })
         .eq('id', editingPatient.id);
@@ -454,7 +474,12 @@ const DashboardPage: React.FC = () => {
                   <DialogHeader>
                     <DialogTitle>Add New Patient</DialogTitle>
                   </DialogHeader>
-                  <PatientForm onSubmit={handleAddPatient} onCancel={() => setIsNewPatientDialogOpen(false)} />
+                  <PatientForm 
+                    onSubmit={handleAddPatient} 
+                    onCancel={() => setIsNewPatientDialogOpen(false)} 
+                    isAdmin={role === 'admin'}
+                    availableOwners={availableOwners}
+                  />
                 </DialogContent>
               </Dialog>
             </div>
@@ -558,6 +583,8 @@ const DashboardPage: React.FC = () => {
                 setIsEditDialogOpen(false);
                 setEditingPatient(null);
               }}
+              isAdmin={role === 'admin'}
+              availableOwners={availableOwners}
             />
           )}
         </DialogContent>
