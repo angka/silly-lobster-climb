@@ -224,9 +224,16 @@ const DashboardPage: React.FC = () => {
         
         for (const p of content.patients) {
           const { id: oldId, created_at, updated_at, ...patientData } = p;
+          
+          // Preserve original user_id if it exists, otherwise use current user
+          const finalPatientData = {
+            ...patientData,
+            user_id: patientData.user_id || user.id
+          };
+
           const { data: newPatient, error: pError } = await supabase
             .from('patients')
-            .insert({ ...patientData, user_id: user.id })
+            .insert(finalPatientData)
             .select()
             .single();
           
@@ -242,7 +249,8 @@ const DashboardPage: React.FC = () => {
               const { id, created_at, ...sessionData } = s;
               return {
                 ...sessionData,
-                user_id: user.id,
+                // Preserve original user_id if it exists, otherwise use current user
+                user_id: sessionData.user_id || user.id,
                 patient_id: idMap[s.patient_id]
               };
             });
@@ -271,7 +279,7 @@ const DashboardPage: React.FC = () => {
       return;
     }
 
-    const headers = ['Name', 'MRN', 'Hospital', 'Diagnosis', 'DOB', 'Gender', 'Phone', 'Doctor', 'Address', 'Category', 'Notes', 'VisitDate'];
+    const headers = ['Name', 'MRN', 'Hospital', 'Diagnosis', 'DOB', 'Gender', 'Phone', 'Doctor', 'Address', 'Category', 'Notes', 'VisitDate', 'CreatedByEmail'];
     const rows = patients.map(p => [
       `"${p.name.replace(/"/g, '""')}"`,
       p.medicalRecordNumber,
@@ -284,7 +292,8 @@ const DashboardPage: React.FC = () => {
       `"${p.address.replace(/"/g, '""')}"`,
       p.lensCategory || '',
       `"${(p.notes || '').replace(/"/g, '""')}"`,
-      p.dateOfVisit ? p.dateOfVisit.toISOString().split('T')[0] : ''
+      p.dateOfVisit ? p.dateOfVisit.toISOString().split('T')[0] : '',
+      `"${(p.profiles?.email || 'Unknown').replace(/"/g, '""')}"`
     ]);
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -315,7 +324,7 @@ const DashboardPage: React.FC = () => {
         const patientsToInsert = lines.slice(1).map(line => {
           const values = parseCsvRow(line);
           return {
-            user_id: user.id,
+            user_id: user.id, // CSV import always assigns to current user as we don't have user IDs in CSV
             name: values[0],
             medical_record_number: values[1],
             hospital: values[2],
