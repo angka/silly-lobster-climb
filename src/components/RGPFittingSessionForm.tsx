@@ -28,8 +28,6 @@ export interface RGPFittingSessionFormData {
   od_k2_power: string;
   od_k2_angle: string;
   od_tbut_schirmer: string;
-  od_wfdt: string;
-  od_stereoscopy: string;
 
   os_ucva: string;
   os_cc: string;
@@ -41,8 +39,9 @@ export interface RGPFittingSessionFormData {
   os_k2_power: string;
   os_k2_angle: string;
   os_tbut_schirmer: string;
-  os_wfdt: string;
-  os_stereoscopy: string;
+
+  wfdt: string;
+  stereoscopy: string;
 
   odProcedures: SingleFittingProcedureData[];
   osProcedures: SingleFittingProcedureData[];
@@ -84,8 +83,10 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
       date: new Date(),
       diagnosis: diagnosis,
       nextFollowUpDate: undefined,
-      od_ucva: '', od_cc: '', od_bcva: '', od_k1_radius: '', od_k1_power: '', od_k1_angle: '', od_k2_radius: '', od_k2_power: '', od_k2_angle: '', od_tbut_schirmer: '', od_wfdt: '', od_stereoscopy: '',
-      os_ucva: '', os_cc: '', os_bcva: '', os_k1_radius: '', os_k1_power: '', os_k1_angle: '', os_k2_radius: '', os_k2_power: '', os_k2_angle: '', os_tbut_schirmer: '', os_wfdt: '', os_stereoscopy: '',
+      od_ucva: '', od_cc: '', od_bcva: '', od_k1_radius: '', od_k1_power: '', od_k1_angle: '', od_k2_radius: '', od_k2_power: '', od_k2_angle: '', od_tbut_schirmer: '',
+      os_ucva: '', os_cc: '', os_bcva: '', os_k1_radius: '', os_k1_power: '', os_k1_angle: '', os_k2_radius: '', os_k2_power: '', os_k2_angle: '', os_tbut_schirmer: '',
+      wfdt: '',
+      stereoscopy: '',
       odProcedures: [],
       osProcedures: [],
     }
@@ -187,10 +188,8 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
               <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-1 mt-1">
+            <div className="grid grid-cols-1 mt-1">
               <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="od_wfdt" value={formData.od_wfdt} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">Stereo</Label><Input className="h-7 text-xs" id="od_stereoscopy" value={formData.od_stereoscopy} onChange={handleChange} /></div>
             </div>
           </div>
 
@@ -211,11 +210,22 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
               <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-1 mt-1">
+            <div className="grid grid-cols-1 mt-1">
               <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="os_wfdt" value={formData.os_wfdt} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">Stereo</Label><Input className="h-7 text-xs" id="os_stereoscopy" value={formData.os_stereoscopy} onChange={handleChange} /></div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-none shadow-none">
+        <CardContent className="p-2 grid grid-cols-2 gap-4 print-grid-2">
+          <div className="space-y-1">
+            <Label htmlFor="wfdt" className="text-sm font-bold">WFDT</Label>
+            <Input id="wfdt" value={formData.wfdt} onChange={handleChange} className="h-8" />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="stereoscopy" className="text-sm font-bold">Stereo</Label>
+            <Input id="stereoscopy" value={formData.stereoscopy} onChange={handleChange} className="h-8" />
           </div>
         </CardContent>
       </Card>
