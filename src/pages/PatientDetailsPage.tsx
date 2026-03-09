@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { showSuccess, showError } from '@/utils/toast';
 import { PatientFormData } from '@/components/PatientForm';
-import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, Printer, History } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { FittingSessionFormData } from '@/components/FittingSessionForm';
@@ -26,7 +26,7 @@ interface Session {
   type: 'Fitting' | 'Follow-up';
   lensType?: 'ROSE_K2_XL' | 'RGP';
   date: Date;
-  data: FittingSessionFormData | FollowUpSessionFormData | RGPFittingSessionFormData;
+  data: any;
 }
 
 const PatientDetailsPage: React.FC = () => {
@@ -40,6 +40,7 @@ const PatientDetailsPage: React.FC = () => {
   const [isSessionDeleteDialogOpen, setIsSessionDeleteDialogOpen] = useState(false);
   const [isFittingLensTypeSelectionOpen, setIsFittingLensTypeSelectionOpen] = useState(false);
   const [isFollowUpLensTypeSelectionOpen, setIsFollowUpLensTypeSelectionOpen] = useState(false);
+  const [isPrintHistoryMode, setIsPrintHistoryMode] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
@@ -131,6 +132,14 @@ const PatientDetailsPage: React.FC = () => {
     }
   };
 
+  const handlePrintFollowUpHistory = () => {
+    setIsPrintHistoryMode(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrintHistoryMode(false);
+    }, 500);
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -143,12 +152,61 @@ const PatientDetailsPage: React.FC = () => {
 
   if (!patient) return null;
 
+  // Print History View
+  if (isPrintHistoryMode) {
+    const followUps = sessions.filter(s => s.type === 'Follow-up');
+    return (
+      <div className="p-4 bg-white text-black">
+        <h1 className="text-2xl font-bold mb-4 border-b pb-2">Follow-up History: {patient.name} (MRN: {patient.medicalRecordNumber})</h1>
+        <div className="space-y-0">
+          {followUps.map((session, index) => (
+            <div key={session.id} className="follow-up-print-item p-4 border rounded-md mb-4">
+              <div className="flex justify-between items-center mb-2 border-b pb-1">
+                <h2 className="text-lg font-bold">Session #{followUps.length - index} - {format(session.date, 'PPP')}</h2>
+                <span className="text-sm font-semibold">Lens: {session.lensType}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-xs underline">OD (Right Eye)</h3>
+                  <p className="text-xs"><strong>BCVA:</strong> {session.data.od_bcva || 'N/A'}</p>
+                  <p className="text-xs"><strong>WFDT:</strong> {session.data.od_wfdt || 'N/A'}</p>
+                  <p className="text-xs"><strong>Stereo:</strong> {session.data.od_tno_stereoskopi || 'N/A'}</p>
+                  <p className="text-xs"><strong>Bagolini:</strong> {session.data.od_bagolini_test || 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-xs underline">OS (Left Eye)</h3>
+                  <p className="text-xs"><strong>BCVA:</strong> {session.data.os_bcva || 'N/A'}</p>
+                  <p className="text-xs"><strong>WFDT:</strong> {session.data.os_wfdt || 'N/A'}</p>
+                  <p className="text-xs"><strong>Stereo:</strong> {session.data.os_tno_stereoskopi || 'N/A'}</p>
+                  <p className="text-xs"><strong>Bagolini:</strong> {session.data.os_bagolini_test || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t">
+                <p className="text-xs"><strong>Notes:</strong> {session.data.notes || 'No notes.'}</p>
+                {session.data.nextFollowUpDate && (
+                  <p className="text-xs mt-1"><strong>Next Follow-up:</strong> {format(new Date(session.data.nextFollowUpDate), 'PPP')}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-4">
-        <Button variant="outline" onClick={() => navigate('/dashboard')} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient List
-        </Button>
+        <div className="flex justify-between items-center mb-6">
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Patient List
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handlePrintFollowUpHistory}>
+              <History className="mr-2 h-4 w-4" /> Print Follow-up History
+            </Button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">

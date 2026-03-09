@@ -6,76 +6,51 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-
     --radius: 0.5rem;
-
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
@@ -94,7 +69,6 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
@@ -102,11 +76,19 @@
 
 /* Print-specific styles */
 @media print {
-  header, /* Hide the main header */
-  .print\:hidden, /* Hide elements explicitly marked with print:hidden */
-  .flex.justify-end.space-x-2.mt-6 /* Hide form action buttons */
-  {
+  @page {
+    margin: 0.5cm;
+    size: auto;
+  }
+
+  header, footer, .print\:hidden, button, .no-print {
     display: none !important;
+  }
+
+  body {
+    background-color: white !important;
+    color: black !important;
+    font-size: 9pt !important;
   }
 
   main {
@@ -114,44 +96,78 @@
     padding: 0 !important;
   }
 
-  body {
-    background-color: #fff !important;
-    color: #000 !important;
-  }
-
-  /* Ensure content takes full width */
-  .max-w-6xl.mx-auto.p-4 {
+  .container {
     max-width: 100% !important;
-    padding: 0 !important;
-  }
-
-  /* Adjust card styling for print */
-  .card {
-    border: 1px solid #ccc !important;
-    box-shadow: none !important;
-    margin-bottom: 1rem !important;
-  }
-
-  /* Ensure inputs and textareas are readable */
-  input, textarea, select {
-    border: none !important;
-    background-color: transparent !important;
+    width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
+  }
+
+  /* Force 2-column layout for OD/OS on print */
+  .print-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Compact cards */
+  .card {
+    border: 1px solid #eee !important;
     box-shadow: none !important;
-    -webkit-print-color-adjust: exact; /* For background colors */
-    color-adjust: exact;
+    margin-bottom: 5px !important;
+    break-inside: avoid;
   }
 
-  /* Make labels and values clear */
+  .card-header {
+    padding: 5px 10px !important;
+  }
+
+  .card-content {
+    padding: 5px 10px !important;
+  }
+
+  /* Compact inputs */
+  input, textarea, select {
+    border: none !important;
+    border-bottom: 1px solid #eee !important;
+    padding: 2px 0 !important;
+    min-height: unset !important;
+    height: auto !important;
+    font-size: 9pt !important;
+  }
+
   label {
+    font-size: 8pt !important;
     font-weight: bold !important;
-    display: block !important;
-    margin-bottom: 0.25rem !important;
+    margin-bottom: 1px !important;
+    color: #666 !important;
   }
 
-  /* Ensure text is black for readability */
-  p, h1, h2, h3, h4, h5, h6, span, div {
-    color: #000 !important;
+  h1 { font-size: 14pt !important; margin-bottom: 5px !important; }
+  h2 { font-size: 12pt !important; margin-bottom: 4px !important; }
+  h3 { font-size: 10pt !important; margin-bottom: 3px !important; }
+
+  /* Follow-up history specific: 2 per page */
+  .follow-up-print-item {
+    height: 48%; /* Slightly less than half to account for margins */
+    border-bottom: 2px dashed #ccc;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    break-inside: avoid;
+  }
+
+  .follow-up-print-item:nth-child(2n) {
+    border-bottom: none;
+    page-break-after: always;
+  }
+
+  /* Ensure tabs content is visible */
+  [role="tabpanel"] {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  .tabs-list {
+    display: none !important;
   }
 }

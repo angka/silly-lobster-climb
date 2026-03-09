@@ -17,7 +17,7 @@ export interface FittingSessionFormData {
   medicalRecordNumber: string;
   date: Date;
   diagnosis?: string;
-  nextFollowUpDate?: Date; // New field
+  nextFollowUpDate?: Date;
 
   od_ucva: string;
   od_cc_bcva: string;
@@ -114,15 +114,13 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       ...prev,
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
-      date: initialData?.date || new Date(),
+      date: initialData?.date ? new Date(initialData.date) : new Date(),
       diagnosis: diagnosis,
       nextFollowUpDate: initialData?.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined,
       ...initialData,
       odProcedures: initialData?.odProcedures || [],
       osProcedures: initialData?.osProcedures || [],
     }));
-    setIsOdRadiusAutoFilled(false);
-    setIsOsRadiusAutoFilled(false);
   }, [patientName, medicalRecordNumber, initialData, diagnosis]);
 
   const calculateAllTrialLensRecommendations = (meanKRadius: string): TrialLensRecommendations => {
@@ -197,25 +195,25 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
   const patientAge = calculateAge(dateOfBirth);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold">ROSE K2 XL FITTING WORKSHEET</CardTitle>
-          <div className="text-lg text-foreground">
+    <form onSubmit={handleSubmit} className="space-y-4 p-2 md:p-4">
+      <Card className="border-none shadow-none">
+        <CardHeader className="p-2">
+          <CardTitle className="text-xl md:text-3xl font-bold">ROSE K2 XL FITTING WORKSHEET</CardTitle>
+          <div className="text-sm md:text-lg text-foreground">
             <span className="font-semibold">{patientName}</span>
             {patientAge !== null && <span className="ml-2 text-muted-foreground">({patientAge} years old)</span>}
           </div>
-          <CardDescription className="text-base">
-            Medical Record Number: {medicalRecordNumber}
+          <CardDescription className="text-xs md:text-base">
+            MRN: {medicalRecordNumber}
             {diagnosis && <span className="ml-4">Diagnosis: {diagnosis}</span>}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+        <CardContent className="p-2 grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
+          <div className="space-y-2">
             <Label htmlFor="date">Date of Session</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.date && "text-muted-foreground")}>
+                <Button variant={"outline"} className={cn("w-full h-8 justify-start text-left font-normal", !formData.date && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
                 </Button>
@@ -226,11 +224,11 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
             </Popover>
           </div>
 
-          <div>
-            <Label htmlFor="nextFollowUpDate">Next Follow-up Schedule</Label>
+          <div className="space-y-2">
+            <Label htmlFor="nextFollowUpDate">Next Follow-up</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.nextFollowUpDate && "text-muted-foreground")}>
+                <Button variant={"outline"} className={cn("w-full h-8 justify-start text-left font-normal", !formData.nextFollowUpDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.nextFollowUpDate ? format(formData.nextFollowUpDate, "PPP") : <span>Schedule next visit</span>}
                 </Button>
@@ -241,61 +239,57 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
             </Popover>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">OD (Right Eye)</h3>
-            <div className="space-y-3">
-              <div><Label htmlFor="od_ucva">UCVA</Label><Input id="od_ucva" value={formData.od_ucva} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_cc_bcva">CC & BCVA</Label><Input id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_k1">K1</Label><Input id="od_k1" value={formData.od_k1} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_k2">K2</Label><Input id="od_k2" value={formData.od_k2} onChange={handleChange} /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label htmlFor="od_mean_k_radius">MEAN K (Radius)</Label><Input id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} /></div>
-                <div><Label htmlFor="od_mean_k_power">MEAN K (Power)</Label><Input id="od_mean_k_power" value={formData.od_mean_k_power} onChange={handleChange} /></div>
-              </div>
-              <div><Label htmlFor="od_kmax">KMAX</Label><Input id="od_kmax" value={formData.od_kmax} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_tbut_schirmer">TBUT/SCHIRMER</Label><Input id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_pentacam">PENTACAM</Label><Input id="od_pentacam" value={formData.od_pentacam} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_orbscan">ORBSCAN</Label><Input id="od_orbscan" value={formData.od_orbscan} onChange={handleChange} /></div>
-              <div>
-                <Label>First Trial Lens Recommendation</Label>
-                <Textarea readOnly className="bg-muted min-h-[100px] text-xs" value={`Keratoconus: ${odTrialLensRecommendations.keratoconus}\nPMD/Keratoglobus: ${odTrialLensRecommendations.pmdKeratoglobus}\nPost Graft: ${odTrialLensRecommendations.postGraft}\nPost Lasik: ${odTrialLensRecommendations.postLasik}`} />
+          <div className="border p-2 rounded-md">
+            <h3 className="text-sm font-bold mb-2 border-b">OD (Right Eye)</h3>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+              <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="od_ucva" value={formData.od_ucva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1</Label><Input className="h-7 text-xs" id="od_k1" value={formData.od_k1} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2</Label><Input className="h-7 text-xs" id="od_k2" value={formData.od_k2} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">MEAN K (Rad)</Label><Input className="h-7 text-xs" id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">MEAN K (Pow)</Label><Input className="h-7 text-xs" id="od_mean_k_power" value={formData.od_mean_k_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">KMAX</Label><Input className="h-7 text-xs" id="od_kmax" value={formData.od_kmax} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">TBUT/SCHIRMER</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
+            </div>
+            <div className="mt-2">
+              <Label className="text-[10px]">Trial Lens Rec</Label>
+              <div className="text-[9px] bg-muted p-1 rounded leading-tight">
+                KC: {odTrialLensRecommendations.keratoconus} | PMD: {odTrialLensRecommendations.pmdKeratoglobus} | Graft: {odTrialLensRecommendations.postGraft} | Lasik: {odTrialLensRecommendations.postLasik}
               </div>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">OS (Left Eye)</h3>
-            <div className="space-y-3">
-              <div><Label htmlFor="os_ucva">UCVA</Label><Input id="os_ucva" value={formData.os_ucva} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_cc_bcva">CC & BCVA</Label><Input id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_k1">K1</Label><Input id="os_k1" value={formData.os_k1} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_k2">K2</Label><Input id="os_k2" value={formData.os_k2} onChange={handleChange} /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label htmlFor="os_mean_k_radius">MEAN K (Radius)</Label><Input id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} /></div>
-                <div><Label htmlFor="os_mean_k_power">MEAN K (Power)</Label><Input id="os_mean_k_power" value={formData.os_mean_k_power} onChange={handleChange} /></div>
-              </div>
-              <div><Label htmlFor="os_kmax">KMAX</Label><Input id="os_kmax" value={formData.os_kmax} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_tbut_schirmer">TBUT/SCHIRMER</Label><Input id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_pentacam">PENTACAM</Label><Input id="os_pentacam" value={formData.os_pentacam} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_orbscan">ORBSCAN</Label><Input id="os_orbscan" value={formData.os_orbscan} onChange={handleChange} /></div>
-              <div>
-                <Label>First Trial Lens Recommendation</Label>
-                <Textarea readOnly className="bg-muted min-h-[100px] text-xs" value={`Keratoconus: ${osTrialLensRecommendations.keratoconus}\nPMD/Keratoglobus: ${osTrialLensRecommendations.pmdKeratoglobus}\nPost Graft: ${osTrialLensRecommendations.postGraft}\nPost Lasik: ${osTrialLensRecommendations.postLasik}`} />
+          <div className="border p-2 rounded-md">
+            <h3 className="text-sm font-bold mb-2 border-b">OS (Left Eye)</h3>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+              <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="os_ucva" value={formData.os_ucva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1</Label><Input className="h-7 text-xs" id="os_k1" value={formData.os_k1} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2</Label><Input className="h-7 text-xs" id="os_k2" value={formData.os_k2} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">MEAN K (Rad)</Label><Input className="h-7 text-xs" id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">MEAN K (Pow)</Label><Input className="h-7 text-xs" id="os_mean_k_power" value={formData.os_mean_k_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">KMAX</Label><Input className="h-7 text-xs" id="os_kmax" value={formData.os_kmax} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">TBUT/SCHIRMER</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
+            </div>
+            <div className="mt-2">
+              <Label className="text-[10px]">Trial Lens Rec</Label>
+              <div className="text-[9px] bg-muted p-1 rounded leading-tight">
+                KC: {osTrialLensRecommendations.keratoconus} | PMD: {osTrialLensRecommendations.pmdKeratoglobus} | Graft: {osTrialLensRecommendations.postGraft} | Lasik: {osTrialLensRecommendations.postLasik}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-2xl">FITTING PROCEDURE</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card className="border-none shadow-none">
+        <CardHeader className="p-2"><CardTitle className="text-lg">FITTING PROCEDURE</CardTitle></CardHeader>
+        <CardContent className="p-2 grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
           <RoseK2XLFittingProcedurePanel eye="OD" procedures={formData.odProcedures} onUpdateProcedures={handleUpdateODProcedures} />
           <RoseK2XLFittingProcedurePanel eye="OS" procedures={formData.osProcedures} onUpdateProcedures={handleUpdateOSProcedures} />
         </CardContent>
       </Card>
 
-      <div className="flex justify-end space-x-2 mt-6">
+      <div className="flex justify-end space-x-2 mt-4 print:hidden">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">Save Fitting Session</Button>
       </div>

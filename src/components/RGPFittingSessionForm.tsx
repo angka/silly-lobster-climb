@@ -16,7 +16,7 @@ export interface RGPFittingSessionFormData {
   medicalRecordNumber: string;
   date: Date;
   diagnosis?: string;
-  nextFollowUpDate?: Date; // New field
+  nextFollowUpDate?: Date;
 
   od_ucva: string;
   od_cc_bcva: string;
@@ -94,7 +94,7 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
       ...prev,
       patientName: patientName,
       medicalRecordNumber: medicalRecordNumber,
-      date: initialData?.date || new Date(),
+      date: initialData?.date ? new Date(initialData.date) : new Date(),
       diagnosis: diagnosis,
       nextFollowUpDate: initialData?.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined,
       ...initialData,
@@ -124,25 +124,25 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
   const patientAge = calculateAge(dateOfBirth);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold">RGP FITTING WORKSHEET</CardTitle>
-          <div className="text-lg text-foreground">
+    <form onSubmit={handleSubmit} className="space-y-4 p-2 md:p-4">
+      <Card className="border-none shadow-none">
+        <CardHeader className="p-2">
+          <CardTitle className="text-xl md:text-3xl font-bold">RGP FITTING WORKSHEET</CardTitle>
+          <div className="text-sm md:text-lg text-foreground">
             <span className="font-semibold">{patientName}</span>
             {patientAge !== null && <span className="ml-2 text-muted-foreground">({patientAge} years old)</span>}
           </div>
-          <CardDescription className="text-base">
-            Medical Record Number: {medicalRecordNumber}
+          <CardDescription className="text-xs md:text-base">
+            MRN: {medicalRecordNumber}
             {diagnosis && <span className="ml-4">Diagnosis: {diagnosis}</span>}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+        <CardContent className="p-2 grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
+          <div className="space-y-2">
             <Label htmlFor="date">Date of Session</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.date && "text-muted-foreground")}>
+                <Button variant={"outline"} className={cn("w-full h-8 justify-start text-left font-normal", !formData.date && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
                 </Button>
@@ -153,11 +153,11 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
             </Popover>
           </div>
 
-          <div>
-            <Label htmlFor="nextFollowUpDate">Next Follow-up Schedule</Label>
+          <div className="space-y-2">
+            <Label htmlFor="nextFollowUpDate">Next Follow-up</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.nextFollowUpDate && "text-muted-foreground")}>
+                <Button variant={"outline"} className={cn("w-full h-8 justify-start text-left font-normal", !formData.nextFollowUpDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.nextFollowUpDate ? format(formData.nextFollowUpDate, "PPP") : <span>Schedule next visit</span>}
                 </Button>
@@ -168,59 +168,63 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
             </Popover>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">OD (Right Eye)</h3>
-            <div className="space-y-3">
-              <div><Label htmlFor="od_ucva">UCVA</Label><Input id="od_ucva" value={formData.od_ucva} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_cc_bcva">CC & BCVA</Label><Input id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
-              <div className="grid grid-cols-3 gap-2">
-                <div><Label htmlFor="od_k1_radius">K1 (Rad)</Label><Input id="od_k1_radius" value={formData.od_k1_radius} onChange={handleChange} /></div>
-                <div><Label htmlFor="od_k1_power">K1 (Pow)</Label><Input id="od_k1_power" value={formData.od_k1_power} onChange={handleChange} /></div>
-                <div><Label htmlFor="od_k1_angle">K1 (Ang)</Label><Input id="od_k1_angle" value={formData.od_k1_angle} onChange={handleChange} /></div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div><Label htmlFor="od_k2_radius">K2 (Rad)</Label><Input id="od_k2_radius" value={formData.od_k2_radius} onChange={handleChange} /></div>
-                <div><Label htmlFor="od_k2_power">K2 (Pow)</Label><Input id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} /></div>
-                <div><Label htmlFor="od_k2_angle">K2 (Ang)</Label><Input id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
-              </div>
-              <div><Label htmlFor="od_tbut_schirmer">TBUT/SCHIRMER</Label><Input id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_wfdt">WFDT</Label><Input id="od_wfdt" value={formData.od_wfdt} onChange={handleChange} /></div>
-              <div><Label htmlFor="od_stereoscopy">Stereoscopy</Label><Input id="od_stereoscopy" value={formData.od_stereoscopy} onChange={handleChange} /></div>
+          <div className="border p-2 rounded-md">
+            <h3 className="text-sm font-bold mb-2 border-b">OD (Right Eye)</h3>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+              <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="od_ucva" value={formData.od_ucva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K1 (Rad)</Label><Input className="h-7 text-xs" id="od_k1_radius" value={formData.od_k1_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (Pow)</Label><Input className="h-7 text-xs" id="od_k1_power" value={formData.od_k1_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (Ang)</Label><Input className="h-7 text-xs" id="od_k1_angle" value={formData.od_k1_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K2 (Rad)</Label><Input className="h-7 text-xs" id="od_k2_radius" value={formData.od_k2_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (Pow)</Label><Input className="h-7 text-xs" id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (Ang)</Label><Input className="h-7 text-xs" id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="od_wfdt" value={formData.od_wfdt} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">Stereo</Label><Input className="h-7 text-xs" id="od_stereoscopy" value={formData.od_stereoscopy} onChange={handleChange} /></div>
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">OS (Left Eye)</h3>
-            <div className="space-y-3">
-              <div><Label htmlFor="os_ucva">UCVA</Label><Input id="os_ucva" value={formData.os_ucva} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_cc_bcva">CC & BCVA</Label><Input id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
-              <div className="grid grid-cols-3 gap-2">
-                <div><Label htmlFor="os_k1_radius">K1 (Rad)</Label><Input id="os_k1_radius" value={formData.os_k1_radius} onChange={handleChange} /></div>
-                <div><Label htmlFor="os_k1_power">K1 (Pow)</Label><Input id="os_k1_power" value={formData.os_k1_power} onChange={handleChange} /></div>
-                <div><Label htmlFor="os_k1_angle">K1 (Ang)</Label><Input id="os_k1_angle" value={formData.os_k1_angle} onChange={handleChange} /></div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div><Label htmlFor="os_k2_radius">K2 (Rad)</Label><Input id="os_k2_radius" value={formData.os_k2_radius} onChange={handleChange} /></div>
-                <div><Label htmlFor="os_k2_power">K2 (Pow)</Label><Input id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} /></div>
-                <div><Label htmlFor="os_k2_angle">K2 (Ang)</Label><Input id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
-              </div>
-              <div><Label htmlFor="os_tbut_schirmer">TBUT/SCHIRMER</Label><Input id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_wfdt">WFDT</Label><Input id="os_wfdt" value={formData.os_wfdt} onChange={handleChange} /></div>
-              <div><Label htmlFor="os_stereoscopy">Stereoscopy</Label><Input id="os_stereoscopy" value={formData.os_stereoscopy} onChange={handleChange} /></div>
+          <div className="border p-2 rounded-md">
+            <h3 className="text-sm font-bold mb-2 border-b">OS (Left Eye)</h3>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+              <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="os_ucva" value={formData.os_ucva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K1 (Rad)</Label><Input className="h-7 text-xs" id="os_k1_radius" value={formData.os_k1_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (Pow)</Label><Input className="h-7 text-xs" id="os_k1_power" value={formData.os_k1_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (Ang)</Label><Input className="h-7 text-xs" id="os_k1_angle" value={formData.os_k1_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K2 (Rad)</Label><Input className="h-7 text-xs" id="os_k2_radius" value={formData.os_k2_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (Pow)</Label><Input className="h-7 text-xs" id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (Ang)</Label><Input className="h-7 text-xs" id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="os_wfdt" value={formData.os_wfdt} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">Stereo</Label><Input className="h-7 text-xs" id="os_stereoscopy" value={formData.os_stereoscopy} onChange={handleChange} /></div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-2xl">FITTING PROCEDURE</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card className="border-none shadow-none">
+        <CardHeader className="p-2"><CardTitle className="text-lg">FITTING PROCEDURE</CardTitle></CardHeader>
+        <CardContent className="p-2 grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
           <FittingProcedurePanel eye="OD" procedures={formData.odProcedures} onUpdateProcedures={handleUpdateODProcedures} k1Radius={formData.od_k1_radius} k2Radius={formData.od_k2_radius} />
           <FittingProcedurePanel eye="OS" procedures={formData.osProcedures} onUpdateProcedures={handleUpdateOSProcedures} k1Radius={formData.os_k1_radius} k2Radius={formData.os_k2_radius} />
         </CardContent>
       </Card>
 
-      <div className="flex justify-end space-x-2 mt-6">
+      <div className="flex justify-end space-x-2 mt-4 print:hidden">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">Save RGP Session</Button>
       </div>
