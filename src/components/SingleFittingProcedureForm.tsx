@@ -175,14 +175,20 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_over_refraction`}>Over Refraction</Label>
-          <Input id={`${eye.toLowerCase()}_over_refraction`} value={data.over_refraction} onChange={handleChange} className="h-8" />
+
+        <div className="col-span-full border-t pt-2 mt-1">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor={`${eye.toLowerCase()}_over_refraction`}>Over Refraction</Label>
+              <Input id={`${eye.toLowerCase()}_over_refraction`} value={data.over_refraction} onChange={handleChange} className="h-8" />
+            </div>
+            <div>
+              <Label htmlFor={`${eye.toLowerCase()}_va`}>BCVA</Label>
+              <Input id={`${eye.toLowerCase()}_va`} value={data.va} onChange={handleChange} className="h-8" />
+            </div>
+          </div>
         </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_va`}>BCVA</Label>
-          <Input id={`${eye.toLowerCase()}_va`} value={data.va} onChange={handleChange} className="h-8" />
-        </div>
+
         <div>
           <Label htmlFor={`${eye.toLowerCase()}_overall_assessment`}>Assessment</Label>
           <Select value={data.overall_assessment} onValueChange={(value) => handleSelectChange('overall_assessment', value)}>
