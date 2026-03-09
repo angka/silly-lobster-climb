@@ -175,12 +175,12 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
               <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
             </div>
             <div className="grid grid-cols-3 gap-1 mt-1">
-              <div><Label className="text-[10px]">K1 (Rad)</Label><Input className="h-7 text-xs" id="od_k1_radius" value={formData.od_k1_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (mm)</Label><Input className="h-7 text-xs" id="od_k1_radius" value={formData.od_k1_radius} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K1 (Pow)</Label><Input className="h-7 text-xs" id="od_k1_power" value={formData.od_k1_power} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K1 (Ang)</Label><Input className="h-7 text-xs" id="od_k1_angle" value={formData.od_k1_angle} onChange={handleChange} /></div>
             </div>
             <div className="grid grid-cols-3 gap-1 mt-1">
-              <div><Label className="text-[10px]">K2 (Rad)</Label><Input className="h-7 text-xs" id="od_k2_radius" value={formData.od_k2_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (mm)</Label><Input className="h-7 text-xs" id="od_k2_radius" value={formData.od_k2_radius} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K2 (Pow)</Label><Input className="h-7 text-xs" id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K2 (Ang)</Label><Input className="h-7 text-xs" id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
             </div>
@@ -198,12 +198,12 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
               <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
             </div>
             <div className="grid grid-cols-3 gap-1 mt-1">
-              <div><Label className="text-[10px]">K1 (Rad)</Label><Input className="h-7 text-xs" id="os_k1_radius" value={formData.os_k1_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (mm)</Label><Input className="h-7 text-xs" id="os_k1_radius" value={formData.os_k1_radius} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K1 (Pow)</Label><Input className="h-7 text-xs" id="os_k1_power" value={formData.os_k1_power} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K1 (Ang)</Label><Input className="h-7 text-xs" id="os_k1_angle" value={formData.os_k1_angle} onChange={handleChange} /></div>
             </div>
             <div className="grid grid-cols-3 gap-1 mt-1">
-              <div><Label className="text-[10px]">K2 (Rad)</Label><Input className="h-7 text-xs" id="os_k2_radius" value={formData.os_k2_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (mm)</Label><Input className="h-7 text-xs" id="os_k2_radius" value={formData.os_k2_radius} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K2 (Pow)</Label><Input className="h-7 text-xs" id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">K2 (Ang)</Label><Input className="h-7 text-xs" id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
             </div>
