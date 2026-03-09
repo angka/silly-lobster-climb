@@ -162,7 +162,17 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
 
         <div>
           <Label htmlFor={`${eye.toLowerCase()}_static_fit`}>Static Fit</Label>
-          <Input id={`${eye.toLowerCase()}_static_fit`} value={data.static_fit} onChange={handleChange} className="h-8" />
+          <Select value={data.static_fit} onValueChange={(value) => handleSelectChange('static_fit', value)}>
+            <SelectTrigger id={`${eye.toLowerCase()}_static_fit`} className="h-8">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alignment fit">Alignment Fit</SelectItem>
+              <SelectItem value="astigmatic fit">Astigmatic Fit</SelectItem>
+              <SelectItem value="central pooling/steep fit">Central Pooling/Steep Fit</SelectItem>
+              <SelectItem value="apical bearing/flat fit">Apical Bearing/Flat Fit</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label htmlFor={`${eye.toLowerCase()}_over_refraction`}>Over Refraction</Label>
