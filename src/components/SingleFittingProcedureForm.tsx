@@ -14,7 +14,8 @@ export interface SingleFittingProcedureData {
   base_curve: string;
   diameter: string;
   power: string;
-  dynamic_fit: string;
+  movement: string;
+  position: string;
   static_fit: string;
   over_refraction: string;
   va: string;
@@ -127,8 +128,30 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
           <Input id={`${eye.toLowerCase()}_power`} value={data.power} onChange={handleChange} className="h-8" />
         </div>
         <div>
-          <Label htmlFor={`${eye.toLowerCase()}_dynamic_fit`}>Dynamic Fit</Label>
-          <Input id={`${eye.toLowerCase()}_dynamic_fit`} value={data.dynamic_fit} onChange={handleChange} className="h-8" />
+          <Label htmlFor={`${eye.toLowerCase()}_movement`}>Movement</Label>
+          <Select value={data.movement} onValueChange={(value) => handleSelectChange('movement', value)}>
+            <SelectTrigger id={`${eye.toLowerCase()}_movement`} className="h-8">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vertical">Vertical</SelectItem>
+              <SelectItem value="lateral rotation">Lateral Rotation</SelectItem>
+              <SelectItem value="no movement">No Movement</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor={`${eye.toLowerCase()}_position`}>Position</Label>
+          <Select value={data.position} onValueChange={(value) => handleSelectChange('position', value)}>
+            <SelectTrigger id={`${eye.toLowerCase()}_position`} className="h-8">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="central">Central</SelectItem>
+              <SelectItem value="low riding">Low Riding</SelectItem>
+              <SelectItem value="high riding">High Riding</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label htmlFor={`${eye.toLowerCase()}_static_fit`}>Static Fit</Label>

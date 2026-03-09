@@ -8,16 +8,16 @@ interface FittingProcedurePanelProps {
   eye: 'OD' | 'OS';
   procedures: SingleFittingProcedureData[];
   onUpdateProcedures: (updatedProcedures: SingleFittingProcedureData[]) => void;
-  k1Radius: string; // New prop
-  k2Radius: string; // New prop
+  k1Radius: string;
+  k2Radius: string;
 }
 
 const FittingProcedurePanel: React.FC<FittingProcedurePanelProps> = ({
   eye,
   procedures,
   onUpdateProcedures,
-  k1Radius, // Destructure new prop
-  k2Radius, // Destructure new prop
+  k1Radius,
+  k2Radius,
 }) => {
   const [activeTab, setActiveTab] = useState<string>('');
 
@@ -25,7 +25,6 @@ const FittingProcedurePanel: React.FC<FittingProcedurePanelProps> = ({
     if (procedures.length > 0 && !activeTab) {
       setActiveTab(procedures[0].id);
     } else if (procedures.length > 0 && !procedures.some(p => p.id === activeTab)) {
-      // If active tab was deleted, switch to the first available tab
       setActiveTab(procedures[0].id);
     } else if (procedures.length === 0) {
       setActiveTab('');
@@ -34,12 +33,15 @@ const FittingProcedurePanel: React.FC<FittingProcedurePanelProps> = ({
 
   const generateNewProcedure = (): SingleFittingProcedureData => ({
     id: `${eye.toLowerCase()}-proc-${Date.now()}`,
-    leading_base_curve: '', // Initialize new fields
-    real_base_curve: '', // Initialize new fields
+    leading_base_curve: '',
+    real_base_curve: '',
     lens_name: '',
     base_curve: '',
     diameter: '',
     power: '',
+    movement: '',
+    position: '',
+    static_fit: '',
     over_refraction: '',
     va: '',
     overall_assessment: '',
@@ -50,7 +52,7 @@ const FittingProcedurePanel: React.FC<FittingProcedurePanelProps> = ({
     const newProcedure = generateNewProcedure();
     const updatedProcedures = [...procedures, newProcedure];
     onUpdateProcedures(updatedProcedures);
-    setActiveTab(newProcedure.id); // Switch to the new tab
+    setActiveTab(newProcedure.id);
   };
 
   const handleUpdateProcedure = (updatedData: SingleFittingProcedureData) => {
@@ -91,9 +93,9 @@ const FittingProcedurePanel: React.FC<FittingProcedurePanelProps> = ({
                 data={proc}
                 onChange={handleUpdateProcedure}
                 onDelete={handleDeleteProcedure}
-                canDelete={procedures.length > 1} // Allow deleting if more than one procedure exists
-                k1Radius={k1Radius} // Pass new prop
-                k2Radius={k2Radius} // Pass new prop
+                canDelete={procedures.length > 1}
+                k1Radius={k1Radius}
+                k2Radius={k2Radius}
               />
             </TabsContent>
           ))}
