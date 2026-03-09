@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RGPFittingSessionFormData } from './RGPFittingSessionForm';
+import FollowUpScheduleList from './FollowUpScheduleList';
 
 interface PreviousSession {
   id: string;
@@ -17,7 +17,7 @@ interface PreviousSession {
   type: 'Fitting' | 'Follow-up';
   lensType?: 'ROSE_K2_XL' | 'RGP';
   date: Date;
-  data: RGPFittingSessionFormData;
+  data: any;
 }
 
 export interface FollowUpSessionFormData {
@@ -27,6 +27,7 @@ export interface FollowUpSessionFormData {
   notes: string;
   lensType?: 'ROSE_K2_XL' | 'RGP';
   nextFollowUpDate?: Date;
+  followUpSchedules?: Date[];
   od_bcva: string;
   od_wfdt: string;
   od_tno_stereoskopi: string;
@@ -59,8 +60,8 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   const [date, setDate] = useState<Date>(
     initialData?.date ? new Date(initialData.date) : new Date()
   );
-  const [nextFollowUpDate, setNextFollowUpDate] = useState<Date | undefined>(
-    initialData?.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined
+  const [followUpSchedules, setFollowUpSchedules] = useState<Date[]>(
+    initialData?.followUpSchedules?.map(d => new Date(d)) || []
   );
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [od_bcva, setOd_bcva] = useState(initialData?.od_bcva || '');
@@ -78,7 +79,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   useEffect(() => {
     if (initialData) {
       setDate(new Date(initialData.date));
-      setNextFollowUpDate(initialData.nextFollowUpDate ? new Date(initialData.nextFollowUpDate) : undefined);
+      setFollowUpSchedules(initialData.followUpSchedules?.map(d => new Date(d)) || []);
       setNotes(initialData.notes);
       setOd_bcva(initialData.od_bcva);
       setOd_wfdt(initialData.od_wfdt);
@@ -97,8 +98,8 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       if (selectedSession) {
         const rgpData = selectedSession.data;
         setDisplayedPreviousSessionData({
-          ccBcvaOD: rgpData.od_cc_bcva,
-          ccBcvaOS: rgpData.os_cc_bcva,
+          ccBcvaOD: rgpData.od_cc_bcva || rgpData.od_bcva,
+          ccBcvaOS: rgpData.os_cc_bcva || rgpData.os_bcva,
         });
       }
     }
@@ -107,7 +108,8 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
-      patientName, medicalRecordNumber, date, notes, lensType, nextFollowUpDate,
+      patientName, medicalRecordNumber, date, notes, lensType, 
+      followUpSchedules,
       od_bcva, od_wfdt, od_tno_stereoskopi, od_bagolini_test,
       os_bcva, os_wfdt, os_tno_stereoskopi, os_bagolini_test,
     });
@@ -136,17 +138,11 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
           </Popover>
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="nextFollowUpDate" className="text-[10px]">Next Follow-up Schedule</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant={"outline"} className={cn("w-full h-8 justify-start text-left font-normal text-xs", !nextFollowUpDate && "text-muted-foreground")}>
-                <CalendarIcon className="mr-2 h-3 w-3" />
-                {nextFollowUpDate ? format(nextFollowUpDate, "PPP") : <span>Schedule next visit</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={nextFollowUpDate} onSelect={(d) => setNextFollowUpDate(d)} initialFocus /></PopoverContent>
-          </Popover>
+        <div className="print:hidden">
+          <FollowUpScheduleList 
+            schedules={followUpSchedules} 
+            onChange={setFollowUpSchedules} 
+          />
         </div>
       </div>
 
@@ -171,7 +167,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OD (Right Eye)</h3>
           <div className="grid grid-cols-2 gap-2">
             <div><Label className="text-[10px]">BCVA</Label><Input className="h-7 text-xs" value={od_bcva} onChange={(e) => setOd_bcva(e.target.value)} /></div>
-            <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" value={od_wfdt} onChange={(e) => setOd_wfdt(e.target.value)} /></div>
+            <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="od_wfdt" value={od_wfdt} onChange={(e) => setOd_wfdt(e.target.value)} /></div>
             <div><Label className="text-[10px]">TNO Stereo</Label><Input className="h-7 text-xs" value={od_tno_stereoskopi} onChange={(e) => setOd_tno_stereoskopi(e.target.value)} /></div>
             <div><Label className="text-[10px]">Bagolini</Label><Input className="h-7 text-xs" value={od_bagolini_test} onChange={(e) => setOd_bagolini_test(e.target.value)} /></div>
           </div>
@@ -180,7 +176,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OS (Left Eye)</h3>
           <div className="grid grid-cols-2 gap-2">
             <div><Label className="text-[10px]">BCVA</Label><Input className="h-7 text-xs" value={os_bcva} onChange={(e) => setOs_bcva(e.target.value)} /></div>
-            <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" value={os_wfdt} onChange={(e) => setOs_wfdt(e.target.value)} /></div>
+            <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="os_wfdt" value={os_wfdt} onChange={(e) => setOs_wfdt(e.target.value)} /></div>
             <div><Label className="text-[10px]">TNO Stereo</Label><Input className="h-7 text-xs" value={os_tno_stereoskopi} onChange={(e) => setOs_tno_stereoskopi(e.target.value)} /></div>
             <div><Label className="text-[10px]">Bagolini</Label><Input className="h-7 text-xs" value={os_bagolini_test} onChange={(e) => setOs_bagolini_test(e.target.value)} /></div>
           </div>

@@ -42,20 +42,40 @@ const FollowUpCalendar = () => {
               diagnosis,
               medical_record_number
             )
-          `)
-          .not('data->nextFollowUpDate', 'is', null);
+          `);
 
         if (error) throw error;
 
-        const scheduled: ScheduledPatient[] = data.map((s: any) => ({
-          id: s.patients.id,
-          name: s.patients.name,
-          phone: s.patients.contact_number || 'N/A',
-          diagnosis: s.patients.diagnosis || 'N/A',
-          lensType: s.lens_type || 'N/A',
-          mrn: s.patients.medical_record_number,
-          followUpDate: new Date(s.data.nextFollowUpDate)
-        }));
+        const scheduled: ScheduledPatient[] = [];
+        
+        data.forEach((s: any) => {
+          const patientInfo = {
+            id: s.patients.id,
+            name: s.patients.name,
+            phone: s.patients.contact_number || 'N/A',
+            diagnosis: s.patients.diagnosis || 'N/A',
+            lensType: s.lens_type || 'N/A',
+            mrn: s.patients.medical_record_number,
+          };
+
+          // Handle legacy single date
+          if (s.data.nextFollowUpDate) {
+            scheduled.push({
+              ...patientInfo,
+              followUpDate: new Date(s.data.nextFollowUpDate)
+            });
+          }
+
+          // Handle new multiple schedules
+          if (s.data.followUpSchedules && Array.isArray(s.data.followUpSchedules)) {
+            s.data.followUpSchedules.forEach((dateStr: string) => {
+              scheduled.push({
+                ...patientInfo,
+                followUpDate: new Date(dateStr)
+              });
+            });
+          }
+        });
 
         setScheduledPatients(scheduled);
       } catch (error) {
