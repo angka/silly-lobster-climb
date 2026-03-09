@@ -127,32 +127,39 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
           <Label htmlFor={`${eye.toLowerCase()}_power`}>Power</Label>
           <Input id={`${eye.toLowerCase()}_power`} value={data.power} onChange={handleChange} className="h-8" />
         </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_movement`}>Movement</Label>
-          <Select value={data.movement} onValueChange={(value) => handleSelectChange('movement', value)}>
-            <SelectTrigger id={`${eye.toLowerCase()}_movement`} className="h-8">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="vertical">Vertical</SelectItem>
-              <SelectItem value="lateral rotation">Lateral Rotation</SelectItem>
-              <SelectItem value="no movement">No Movement</SelectItem>
-            </SelectContent>
-          </Select>
+
+        <div className="col-span-full border-t pt-2 mt-1">
+          <Label className="text-[10px] font-bold uppercase text-muted-foreground mb-2 block">Dynamic Fit</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor={`${eye.toLowerCase()}_movement`} className="text-[10px]">Movement</Label>
+              <Select value={data.movement} onValueChange={(value) => handleSelectChange('movement', value)}>
+                <SelectTrigger id={`${eye.toLowerCase()}_movement`} className="h-8">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vertical">Vertical</SelectItem>
+                  <SelectItem value="lateral rotation">Lateral Rotation</SelectItem>
+                  <SelectItem value="no movement">No Movement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor={`${eye.toLowerCase()}_position`} className="text-[10px]">Position</Label>
+              <Select value={data.position} onValueChange={(value) => handleSelectChange('position', value)}>
+                <SelectTrigger id={`${eye.toLowerCase()}_position`} className="h-8">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="central">Central</SelectItem>
+                  <SelectItem value="low riding">Low Riding</SelectItem>
+                  <SelectItem value="high riding">High Riding</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_position`}>Position</Label>
-          <Select value={data.position} onValueChange={(value) => handleSelectChange('position', value)}>
-            <SelectTrigger id={`${eye.toLowerCase()}_position`} className="h-8">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="central">Central</SelectItem>
-              <SelectItem value="low riding">Low Riding</SelectItem>
-              <SelectItem value="high riding">High Riding</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+
         <div>
           <Label htmlFor={`${eye.toLowerCase()}_static_fit`}>Static Fit</Label>
           <Input id={`${eye.toLowerCase()}_static_fit`} value={data.static_fit} onChange={handleChange} className="h-8" />
