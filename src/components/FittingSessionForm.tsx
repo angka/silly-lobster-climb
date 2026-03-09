@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -21,25 +20,27 @@ export interface FittingSessionFormData {
 
   od_ucva: string;
   od_cc_bcva: string;
-  od_k1: string;
-  od_k2: string;
-  od_mean_k_radius: string;
-  od_mean_k_power: string;
-  od_kmax: string;
+  od_k1_radius: string;
+  od_k1_power: string;
+  od_k1_angle: string;
+  od_k2_radius: string;
+  od_k2_power: string;
+  od_k2_angle: string;
   od_tbut_schirmer: string;
-  od_pentacam: string;
-  od_orbscan: string;
+  od_wfdt: string;
+  od_stereoscopy: string;
 
   os_ucva: string;
   os_cc_bcva: string;
-  os_k1: string;
-  os_k2: string;
-  os_mean_k_radius: string;
-  os_mean_k_power: string;
-  os_kmax: string;
+  os_k1_radius: string;
+  os_k1_power: string;
+  os_k1_angle: string;
+  os_k2_radius: string;
+  os_k2_power: string;
+  os_k2_angle: string;
   os_tbut_schirmer: string;
-  os_pentacam: string;
-  os_orbscan: string;
+  os_wfdt: string;
+  os_stereoscopy: string;
 
   odProcedures: SingleRoseK2XLFittingProcedureData[];
   osProcedures: SingleRoseK2XLFittingProcedureData[];
@@ -61,18 +62,9 @@ const calculateAge = (dob?: Date): number | null => {
   const birthDate = new Date(dob);
   let age = today.getFullYear() - birthDate.getFullYear();
   const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
   return age;
 };
-
-interface TrialLensRecommendations {
-  keratoconus: string;
-  pmdKeratoglobus: string;
-  postGraft: string;
-  postLasik: string;
-}
 
 const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
   patientName,
@@ -90,24 +82,12 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       date: new Date(),
       diagnosis: diagnosis,
       nextFollowUpDate: undefined,
-      od_ucva: '', od_cc_bcva: '', od_k1: '', od_k2: '', od_mean_k_radius: '', od_mean_k_power: '', od_kmax: '',
-      od_tbut_schirmer: '', od_pentacam: '', od_orbscan: '',
-      os_ucva: '', os_cc_bcva: '', os_k1: '', os_k2: '', os_mean_k_radius: '', os_mean_k_power: '', os_kmax: '',
-      os_tbut_schirmer: '', os_pentacam: '', os_orbscan: '',
+      od_ucva: '', od_cc_bcva: '', od_k1_radius: '', od_k1_power: '', od_k1_angle: '', od_k2_radius: '', od_k2_power: '', od_k2_angle: '', od_tbut_schirmer: '', od_wfdt: '', od_stereoscopy: '',
+      os_ucva: '', os_cc_bcva: '', os_k1_radius: '', os_k1_power: '', os_k1_angle: '', os_k2_radius: '', os_k2_power: '', os_k2_angle: '', os_tbut_schirmer: '', os_wfdt: '', os_stereoscopy: '',
       odProcedures: [],
       osProcedures: [],
     }
   );
-
-  const [isOdRadiusAutoFilled, setIsOdRadiusAutoFilled] = useState(false);
-  const [isOsRadiusAutoFilled, setIsOsRadiusAutoFilled] = useState(false);
-
-  const [odTrialLensRecommendations, setOdTrialLensRecommendations] = useState<TrialLensRecommendations>({
-    keratoconus: 'N/A', pmdKeratoglobus: 'N/A', postGraft: 'N/A', postLasik: 'N/A',
-  });
-  const [osTrialLensRecommendations, setOsTrialLensRecommendations] = useState<TrialLensRecommendations>({
-    keratoconus: 'N/A', pmdKeratoglobus: 'N/A', postGraft: 'N/A', postLasik: 'N/A',
-  });
 
   useEffect(() => {
     setFormData(prev => ({
@@ -123,60 +103,9 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
     }));
   }, [patientName, medicalRecordNumber, initialData, diagnosis]);
 
-  const calculateAllTrialLensRecommendations = (meanKRadius: string): TrialLensRecommendations => {
-    const radius = parseFloat(meanKRadius);
-    if (isNaN(radius) || radius <= 0) {
-      return { keratoconus: 'N/A', pmdKeratoglobus: 'N/A', postGraft: 'N/A', postLasik: 'N/A' };
-    }
-
-    let keratoconusValue: string;
-    if (radius === 7.4) keratoconusValue = radius.toFixed(2);
-    else if (radius < 7.4) keratoconusValue = (radius + (7.4 - radius) / 2).toFixed(2);
-    else keratoconusValue = (radius - (radius - 7.4) / 2).toFixed(2);
-
-    return {
-      keratoconus: keratoconusValue,
-      pmdKeratoglobus: (radius - 0.6).toFixed(2),
-      postGraft: (radius - 0.7).toFixed(2),
-      postLasik: (radius - 0.7).toFixed(2),
-    };
-  };
-
-  useEffect(() => {
-    const power = parseFloat(formData.od_mean_k_power);
-    if (!isNaN(power) && power !== 0) {
-      const calculatedRadius = (337.5 / power).toFixed(2);
-      if (formData.od_mean_k_radius === '' || isOdRadiusAutoFilled) {
-        setIsOdRadiusAutoFilled(true);
-        setFormData(prev => ({ ...prev, od_mean_k_radius: calculatedRadius }));
-      }
-    }
-  }, [formData.od_mean_k_power, isOdRadiusAutoFilled]);
-
-  useEffect(() => {
-    const power = parseFloat(formData.os_mean_k_power);
-    if (!isNaN(power) && power !== 0) {
-      const calculatedRadius = (337.5 / power).toFixed(2);
-      if (formData.os_mean_k_radius === '' || isOsRadiusAutoFilled) {
-        setIsOsRadiusAutoFilled(true);
-        setFormData(prev => ({ ...prev, os_mean_k_radius: calculatedRadius }));
-      }
-    }
-  }, [formData.os_mean_k_power, isOsRadiusAutoFilled]);
-
-  useEffect(() => {
-    setOdTrialLensRecommendations(calculateAllTrialLensRecommendations(formData.od_mean_k_radius));
-  }, [formData.od_mean_k_radius]);
-
-  useEffect(() => {
-    setOsTrialLensRecommendations(calculateAllTrialLensRecommendations(formData.os_mean_k_radius));
-  }, [formData.os_mean_k_radius]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-    if (id === 'od_mean_k_radius') setIsOdRadiusAutoFilled(false);
-    else if (id === 'os_mean_k_radius') setIsOsRadiusAutoFilled(false);
   };
 
   const handleUpdateODProcedures = (updatedProcedures: SingleRoseK2XLFittingProcedureData[]) => {
@@ -244,18 +173,21 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
             <div className="grid grid-cols-2 gap-x-2 gap-y-1">
               <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="od_ucva" value={formData.od_ucva} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">K1</Label><Input className="h-7 text-xs" id="od_k1" value={formData.od_k1} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">K2</Label><Input className="h-7 text-xs" id="od_k2" value={formData.od_k2} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">MEAN K (Rad)</Label><Input className="h-7 text-xs" id="od_mean_k_radius" value={formData.od_mean_k_radius} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">MEAN K (Pow)</Label><Input className="h-7 text-xs" id="od_mean_k_power" value={formData.od_mean_k_power} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">KMAX</Label><Input className="h-7 text-xs" id="od_kmax" value={formData.od_kmax} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">TBUT/SCHIRMER</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
             </div>
-            <div className="mt-2">
-              <Label className="text-[10px]">Trial Lens Rec</Label>
-              <div className="text-[9px] bg-muted p-1 rounded leading-tight">
-                KC: {odTrialLensRecommendations.keratoconus} | PMD: {odTrialLensRecommendations.pmdKeratoglobus} | Graft: {odTrialLensRecommendations.postGraft} | Lasik: {odTrialLensRecommendations.postLasik}
-              </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K1 (mm)</Label><Input className="h-7 text-xs" id="od_k1_radius" value={formData.od_k1_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (D)</Label><Input className="h-7 text-xs" id="od_k1_power" value={formData.od_k1_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (Ang)</Label><Input className="h-7 text-xs" id="od_k1_angle" value={formData.od_k1_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K2 (mm)</Label><Input className="h-7 text-xs" id="od_k2_radius" value={formData.od_k2_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (Ang)</Label><Input className="h-7 text-xs" id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="od_wfdt" value={formData.od_wfdt} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">Stereo</Label><Input className="h-7 text-xs" id="od_stereoscopy" value={formData.od_stereoscopy} onChange={handleChange} /></div>
             </div>
           </div>
 
@@ -264,18 +196,21 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
             <div className="grid grid-cols-2 gap-x-2 gap-y-1">
               <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="os_ucva" value={formData.os_ucva} onChange={handleChange} /></div>
               <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">K1</Label><Input className="h-7 text-xs" id="os_k1" value={formData.os_k1} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">K2</Label><Input className="h-7 text-xs" id="os_k2" value={formData.os_k2} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">MEAN K (Rad)</Label><Input className="h-7 text-xs" id="os_mean_k_radius" value={formData.os_mean_k_radius} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">MEAN K (Pow)</Label><Input className="h-7 text-xs" id="os_mean_k_power" value={formData.os_mean_k_power} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">KMAX</Label><Input className="h-7 text-xs" id="os_kmax" value={formData.os_kmax} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">TBUT/SCHIRMER</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
             </div>
-            <div className="mt-2">
-              <Label className="text-[10px]">Trial Lens Rec</Label>
-              <div className="text-[9px] bg-muted p-1 rounded leading-tight">
-                KC: {osTrialLensRecommendations.keratoconus} | PMD: {osTrialLensRecommendations.pmdKeratoglobus} | Graft: {osTrialLensRecommendations.postGraft} | Lasik: {osTrialLensRecommendations.postLasik}
-              </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K1 (mm)</Label><Input className="h-7 text-xs" id="os_k1_radius" value={formData.os_k1_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (D)</Label><Input className="h-7 text-xs" id="os_k1_power" value={formData.os_k1_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K1 (Ang)</Label><Input className="h-7 text-xs" id="os_k1_angle" value={formData.os_k1_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">K2 (mm)</Label><Input className="h-7 text-xs" id="os_k2_radius" value={formData.os_k2_radius} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">K2 (Ang)</Label><Input className="h-7 text-xs" id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="os_wfdt" value={formData.os_wfdt} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">Stereo</Label><Input className="h-7 text-xs" id="os_stereoscopy" value={formData.os_stereoscopy} onChange={handleChange} /></div>
             </div>
           </div>
         </CardContent>
@@ -284,14 +219,14 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       <Card className="border-none shadow-none">
         <CardHeader className="p-2"><CardTitle className="text-lg">FITTING PROCEDURE</CardTitle></CardHeader>
         <CardContent className="p-2 grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
-          <RoseK2XLFittingProcedurePanel eye="OD" procedures={formData.odProcedures} onUpdateProcedures={handleUpdateODProcedures} />
-          <RoseK2XLFittingProcedurePanel eye="OS" procedures={formData.osProcedures} onUpdateProcedures={handleUpdateOSProcedures} />
+          <RoseK2XLFittingProcedurePanel eye="OD" procedures={formData.odProcedures} onUpdateProcedures={handleUpdateODProcedures} k1Radius={formData.od_k1_radius} k2Radius={formData.od_k2_radius} />
+          <RoseK2XLFittingProcedurePanel eye="OS" procedures={formData.osProcedures} onUpdateProcedures={handleUpdateOSProcedures} k1Radius={formData.os_k1_radius} k2Radius={formData.os_k2_radius} />
         </CardContent>
       </Card>
 
       <div className="flex justify-end space-x-2 mt-4 print:hidden">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">Save Fitting Session</Button>
+        <Button type="submit">Save ROSE K2 XL Session</Button>
       </div>
     </form>
   );
