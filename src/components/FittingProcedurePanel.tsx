@@ -45,6 +45,7 @@ const FittingProcedurePanel: React.FC<FittingProcedurePanelProps> = ({
     over_refraction: '',
     va: '',
     overall_assessment: '',
+    final_prescription: '',
     comments: '',
   });
 

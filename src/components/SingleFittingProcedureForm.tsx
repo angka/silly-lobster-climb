@@ -20,6 +20,7 @@ export interface SingleFittingProcedureData {
   over_refraction: string;
   va: string;
   overall_assessment: string;
+  final_prescription: string;
   comments: string;
 }
 
@@ -194,6 +195,10 @@ const SingleFittingProcedureForm: React.FC<SingleFittingProcedureFormProps> = ({
               <SelectItem value="Poor">Poor</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <Label htmlFor={`${eye.toLowerCase()}_final_prescription`}>Final Prescription</Label>
+          <Input id={`${eye.toLowerCase()}_final_prescription`} value={data.final_prescription} onChange={handleChange} className="h-8" />
         </div>
         <div className="col-span-full">
           <Label htmlFor={`${eye.toLowerCase()}_comments`}>Comments</Label>
