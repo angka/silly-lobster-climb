@@ -19,7 +19,8 @@ export interface RGPFittingSessionFormData {
   nextFollowUpDate?: Date;
 
   od_ucva: string;
-  od_cc_bcva: string;
+  od_cc: string;
+  od_bcva: string;
   od_k1_radius: string;
   od_k1_power: string;
   od_k1_angle: string;
@@ -31,7 +32,8 @@ export interface RGPFittingSessionFormData {
   od_stereoscopy: string;
 
   os_ucva: string;
-  os_cc_bcva: string;
+  os_cc: string;
+  os_bcva: string;
   os_k1_radius: string;
   os_k1_power: string;
   os_k1_angle: string;
@@ -82,8 +84,8 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
       date: new Date(),
       diagnosis: diagnosis,
       nextFollowUpDate: undefined,
-      od_ucva: '', od_cc_bcva: '', od_k1_radius: '', od_k1_power: '', od_k1_angle: '', od_k2_radius: '', od_k2_power: '', od_k2_angle: '', od_tbut_schirmer: '', od_wfdt: '', od_stereoscopy: '',
-      os_ucva: '', os_cc_bcva: '', os_k1_radius: '', os_k1_power: '', os_k1_angle: '', os_k2_radius: '', os_k2_power: '', os_k2_angle: '', os_tbut_schirmer: '', os_wfdt: '', os_stereoscopy: '',
+      od_ucva: '', od_cc: '', od_bcva: '', od_k1_radius: '', od_k1_power: '', od_k1_angle: '', od_k2_radius: '', od_k2_power: '', od_k2_angle: '', od_tbut_schirmer: '', od_wfdt: '', od_stereoscopy: '',
+      os_ucva: '', os_cc: '', os_bcva: '', os_k1_radius: '', os_k1_power: '', os_k1_angle: '', os_k2_radius: '', os_k2_power: '', os_k2_angle: '', os_tbut_schirmer: '', os_wfdt: '', os_stereoscopy: '',
       odProcedures: [],
       osProcedures: [],
     }
@@ -170,9 +172,10 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
 
           <div className="border p-2 rounded-md">
             <h3 className="text-sm font-bold mb-2 border-b">OD (Right Eye)</h3>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+            <div className="grid grid-cols-3 gap-1">
               <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="od_ucva" value={formData.od_ucva} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="od_cc_bcva" value={formData.od_cc_bcva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">CC</Label><Input className="h-7 text-xs" id="od_cc" value={formData.od_cc} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">BCVA</Label><Input className="h-7 text-xs" id="od_bcva" value={formData.od_bcva} onChange={handleChange} /></div>
             </div>
             <div className="grid grid-cols-3 gap-1 mt-1">
               <div><Label className="text-[10px]">K1 (mm)</Label><Input className="h-7 text-xs" id="od_k1_radius" value={formData.od_k1_radius} onChange={handleChange} /></div>
@@ -193,9 +196,10 @@ const RGPFittingSessionForm: React.FC<RGPFittingSessionFormProps> = ({
 
           <div className="border p-2 rounded-md">
             <h3 className="text-sm font-bold mb-2 border-b">OS (Left Eye)</h3>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+            <div className="grid grid-cols-3 gap-1">
               <div><Label className="text-[10px]">UCVA</Label><Input className="h-7 text-xs" id="os_ucva" value={formData.os_ucva} onChange={handleChange} /></div>
-              <div><Label className="text-[10px]">CC & BCVA</Label><Input className="h-7 text-xs" id="os_cc_bcva" value={formData.os_cc_bcva} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">CC</Label><Input className="h-7 text-xs" id="os_cc" value={formData.os_cc} onChange={handleChange} /></div>
+              <div><Label className="text-[10px]">BCVA</Label><Input className="h-7 text-xs" id="os_bcva" value={formData.os_bcva} onChange={handleChange} /></div>
             </div>
             <div className="grid grid-cols-3 gap-1 mt-1">
               <div><Label className="text-[10px]">K1 (mm)</Label><Input className="h-7 text-xs" id="os_k1_radius" value={formData.os_k1_radius} onChange={handleChange} /></div>
