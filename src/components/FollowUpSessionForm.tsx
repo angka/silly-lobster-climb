@@ -33,7 +33,9 @@ export interface FollowUpSessionFormData {
   tno_stereoskopi: string;
   bagolini_test: string;
   // Eye specific
+  od_cc: string;
   od_bcva: string;
+  os_cc: string;
   os_bcva: string;
 }
 
@@ -70,7 +72,9 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   const [bagolini_test, setBagolini_test] = useState(initialData?.bagolini_test || '');
   
   // Eye specific state
+  const [od_cc, setOd_cc] = useState(initialData?.od_cc || '');
   const [od_bcva, setOd_bcva] = useState(initialData?.od_bcva || '');
+  const [os_cc, setOs_cc] = useState(initialData?.os_cc || '');
   const [os_bcva, setOs_bcva] = useState(initialData?.os_bcva || '');
 
   const [selectedPreviousSessionId, setSelectedPreviousSessionId] = useState<string>('');
@@ -84,7 +88,9 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       setWfdt(initialData.wfdt || '');
       setTno_stereoskopi(initialData.tno_stereoskopi || '');
       setBagolini_test(initialData.bagolini_test || '');
+      setOd_cc(initialData.od_cc || '');
       setOd_bcva(initialData.od_bcva || '');
+      setOs_cc(initialData.os_cc || '');
       setOs_bcva(initialData.os_bcva || '');
     }
   }, [initialData]);
@@ -114,7 +120,9 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       wfdt,
       tno_stereoskopi,
       bagolini_test,
+      od_cc,
       od_bcva,
+      os_cc,
       os_bcva,
     });
   };
@@ -169,16 +177,28 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
         <div className="space-y-2 border p-2 rounded-md">
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OD (Right Eye)</h3>
-          <div>
-            <Label className="text-[10px]">BCVA</Label>
-            <Input className="h-7 text-xs" value={od_bcva} onChange={(e) => setOd_bcva(e.target.value)} />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px]">CC</Label>
+              <Input className="h-7 text-xs" value={od_cc} onChange={(e) => setOd_cc(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">BCVA</Label>
+              <Input className="h-7 text-xs" value={od_bcva} onChange={(e) => setOd_bcva(e.target.value)} />
+            </div>
           </div>
         </div>
         <div className="space-y-2 border p-2 rounded-md">
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OS (Left Eye)</h3>
-          <div>
-            <Label className="text-[10px]">BCVA</Label>
-            <Input className="h-7 text-xs" value={os_bcva} onChange={(e) => setOs_bcva(e.target.value)} />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px]">CC</Label>
+              <Input className="h-7 text-xs" value={os_cc} onChange={(e) => setOs_cc(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[10px]">BCVA</Label>
+              <Input className="h-7 text-xs" value={os_bcva} onChange={(e) => setOs_bcva(e.target.value)} />
+            </div>
           </div>
         </div>
       </div>

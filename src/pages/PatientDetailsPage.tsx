@@ -168,10 +168,12 @@ const PatientDetailsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <h3 className="font-bold text-xs underline">OD (Right Eye)</h3>
+                  <p className="text-xs"><strong>CC:</strong> {session.data.od_cc || 'N/A'}</p>
                   <p className="text-xs"><strong>BCVA:</strong> {session.data.od_bcva || 'N/A'}</p>
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-bold text-xs underline">OS (Left Eye)</h3>
+                  <p className="text-xs"><strong>CC:</strong> {session.data.os_cc || 'N/A'}</p>
                   <p className="text-xs"><strong>BCVA:</strong> {session.data.os_bcva || 'N/A'}</p>
                 </div>
               </div>
