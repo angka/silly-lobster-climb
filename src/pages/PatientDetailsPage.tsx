@@ -165,16 +165,21 @@ const PatientDetailsPage: React.FC = () => {
                 <h2 className="text-lg font-bold">Session #{followUps.length - index} - {format(session.date, 'PPP')}</h2>
                 <span className="text-sm font-semibold">Lens: {session.lensType}</span>
               </div>
+              <div className="mb-2">
+                <p className="text-xs"><strong>Subjective:</strong> {session.data.subjective || 'N/A'}</p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <h3 className="font-bold text-xs underline">OD (Right Eye)</h3>
                   <p className="text-xs"><strong>CC:</strong> {session.data.od_cc || 'N/A'}</p>
                   <p className="text-xs"><strong>BCVA:</strong> {session.data.od_bcva || 'N/A'}</p>
+                  <p className="text-xs"><strong>Cornea:</strong> {session.data.od_cornea || 'N/A'}</p>
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-bold text-xs underline">OS (Left Eye)</h3>
                   <p className="text-xs"><strong>CC:</strong> {session.data.os_cc || 'N/A'}</p>
                   <p className="text-xs"><strong>BCVA:</strong> {session.data.os_bcva || 'N/A'}</p>
+                  <p className="text-xs"><strong>Cornea:</strong> {session.data.os_cornea || 'N/A'}</p>
                 </div>
               </div>
               <div className="mt-2 pt-2 border-t grid grid-cols-3 gap-2">

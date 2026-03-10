@@ -25,6 +25,7 @@ export interface FollowUpSessionFormData {
   medicalRecordNumber: string;
   date: Date;
   notes: string;
+  subjective: string;
   lensType?: 'ROSE_K2_XL' | 'RGP';
   nextFollowUpDate?: Date;
   followUpSchedules?: Date[];
@@ -35,8 +36,10 @@ export interface FollowUpSessionFormData {
   // Eye specific
   od_cc: string;
   od_bcva: string;
+  od_cornea: string;
   os_cc: string;
   os_bcva: string;
+  os_cornea: string;
 }
 
 interface FollowUpSessionFormProps {
@@ -65,6 +68,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
     initialData?.followUpSchedules?.map(d => new Date(d)) || []
   );
   const [notes, setNotes] = useState(initialData?.notes || '');
+  const [subjective, setSubjective] = useState(initialData?.subjective || '');
   
   // Shared fields state
   const [wfdt, setWfdt] = useState(initialData?.wfdt || '');
@@ -74,8 +78,10 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   // Eye specific state
   const [od_cc, setOd_cc] = useState(initialData?.od_cc || '');
   const [od_bcva, setOd_bcva] = useState(initialData?.od_bcva || '');
+  const [od_cornea, setOd_cornea] = useState(initialData?.od_cornea || '');
   const [os_cc, setOs_cc] = useState(initialData?.os_cc || '');
   const [os_bcva, setOs_bcva] = useState(initialData?.os_bcva || '');
+  const [os_cornea, setOs_cornea] = useState(initialData?.os_cornea || '');
 
   const [selectedPreviousSessionId, setSelectedPreviousSessionId] = useState<string>('');
   const [displayedPreviousSessionData, setDisplayedPreviousSessionData] = useState<any>(null);
@@ -85,13 +91,16 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       setDate(new Date(initialData.date));
       setFollowUpSchedules(initialData.followUpSchedules?.map(d => new Date(d)) || []);
       setNotes(initialData.notes);
+      setSubjective(initialData.subjective || '');
       setWfdt(initialData.wfdt || '');
       setTno_stereoskopi(initialData.tno_stereoskopi || '');
       setBagolini_test(initialData.bagolini_test || '');
       setOd_cc(initialData.od_cc || '');
       setOd_bcva(initialData.od_bcva || '');
+      setOd_cornea(initialData.od_cornea || '');
       setOs_cc(initialData.os_cc || '');
       setOs_bcva(initialData.os_bcva || '');
+      setOs_cornea(initialData.os_cornea || '');
     }
   }, [initialData]);
 
@@ -115,6 +124,7 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       medicalRecordNumber, 
       date, 
       notes, 
+      subjective,
       lensType, 
       followUpSchedules,
       wfdt,
@@ -122,8 +132,10 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       bagolini_test,
       od_cc,
       od_bcva,
+      od_cornea,
       os_cc,
       os_bcva,
+      os_cornea,
     });
   };
 
@@ -174,6 +186,17 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
         </div>
       )}
 
+      <div className="space-y-1">
+        <Label htmlFor="subjective" className="text-[10px]">Subjective (Complaints/History)</Label>
+        <Textarea 
+          id="subjective" 
+          value={subjective} 
+          onChange={(e) => setSubjective(e.target.value)} 
+          className="text-xs min-h-[60px]" 
+          placeholder="Patient complaints, comfort, wearing time, etc."
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
         <div className="space-y-2 border p-2 rounded-md">
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OD (Right Eye)</h3>
@@ -187,6 +210,10 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
               <Input className="h-7 text-xs" value={od_bcva} onChange={(e) => setOd_bcva(e.target.value)} />
             </div>
           </div>
+          <div className="mt-2">
+            <Label className="text-[10px]">Cornea</Label>
+            <Input className="h-7 text-xs" value={od_cornea} onChange={(e) => setOd_cornea(e.target.value)} placeholder="Staining, edema, etc." />
+          </div>
         </div>
         <div className="space-y-2 border p-2 rounded-md">
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OS (Left Eye)</h3>
@@ -199,6 +226,10 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
               <Label className="text-[10px]">BCVA</Label>
               <Input className="h-7 text-xs" value={os_bcva} onChange={(e) => setOs_bcva(e.target.value)} />
             </div>
+          </div>
+          <div className="mt-2">
+            <Label className="text-[10px]">Cornea</Label>
+            <Input className="h-7 text-xs" value={os_cornea} onChange={(e) => setOs_cornea(e.target.value)} placeholder="Staining, edema, etc." />
           </div>
         </div>
       </div>
