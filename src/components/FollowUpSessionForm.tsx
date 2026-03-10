@@ -28,14 +28,13 @@ export interface FollowUpSessionFormData {
   lensType?: 'ROSE_K2_XL' | 'RGP';
   nextFollowUpDate?: Date;
   followUpSchedules?: Date[];
+  // Shared fields
+  wfdt: string;
+  tno_stereoskopi: string;
+  bagolini_test: string;
+  // Eye specific
   od_bcva: string;
-  od_wfdt: string;
-  od_tno_stereoskopi: string;
-  od_bagolini_test: string;
   os_bcva: string;
-  os_wfdt: string;
-  os_tno_stereoskopi: string;
-  os_bagolini_test: string;
 }
 
 interface FollowUpSessionFormProps {
@@ -64,14 +63,15 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
     initialData?.followUpSchedules?.map(d => new Date(d)) || []
   );
   const [notes, setNotes] = useState(initialData?.notes || '');
+  
+  // Shared fields state
+  const [wfdt, setWfdt] = useState(initialData?.wfdt || '');
+  const [tno_stereoskopi, setTno_stereoskopi] = useState(initialData?.tno_stereoskopi || '');
+  const [bagolini_test, setBagolini_test] = useState(initialData?.bagolini_test || '');
+  
+  // Eye specific state
   const [od_bcva, setOd_bcva] = useState(initialData?.od_bcva || '');
-  const [od_wfdt, setOd_wfdt] = useState(initialData?.od_wfdt || '');
-  const [od_tno_stereoskopi, setOd_tno_stereoskopi] = useState(initialData?.od_tno_stereoskopi || '');
-  const [od_bagolini_test, setOd_bagolini_test] = useState(initialData?.od_bagolini_test || '');
   const [os_bcva, setOs_bcva] = useState(initialData?.os_bcva || '');
-  const [os_wfdt, setOs_wfdt] = useState(initialData?.os_wfdt || '');
-  const [os_tno_stereoskopi, setOs_tno_stereoskopi] = useState(initialData?.os_tno_stereoskopi || '');
-  const [os_bagolini_test, setOs_bagolini_test] = useState(initialData?.os_bagolini_test || '');
 
   const [selectedPreviousSessionId, setSelectedPreviousSessionId] = useState<string>('');
   const [displayedPreviousSessionData, setDisplayedPreviousSessionData] = useState<any>(null);
@@ -81,14 +81,11 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       setDate(new Date(initialData.date));
       setFollowUpSchedules(initialData.followUpSchedules?.map(d => new Date(d)) || []);
       setNotes(initialData.notes);
-      setOd_bcva(initialData.od_bcva);
-      setOd_wfdt(initialData.od_wfdt);
-      setOd_tno_stereoskopi(initialData.od_tno_stereoskopi);
-      setOd_bagolini_test(initialData.od_bagolini_test);
-      setOs_bcva(initialData.os_bcva);
-      setOs_wfdt(initialData.os_wfdt);
-      setOs_tno_stereoskopi(initialData.os_tno_stereoskopi);
-      setOs_bagolini_test(initialData.os_bagolini_test);
+      setWfdt(initialData.wfdt || '');
+      setTno_stereoskopi(initialData.tno_stereoskopi || '');
+      setBagolini_test(initialData.bagolini_test || '');
+      setOd_bcva(initialData.od_bcva || '');
+      setOs_bcva(initialData.os_bcva || '');
     }
   }, [initialData]);
 
@@ -108,10 +105,17 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
-      patientName, medicalRecordNumber, date, notes, lensType, 
+      patientName, 
+      medicalRecordNumber, 
+      date, 
+      notes, 
+      lensType, 
       followUpSchedules,
-      od_bcva, od_wfdt, od_tno_stereoskopi, od_bagolini_test,
-      os_bcva, os_wfdt, os_tno_stereoskopi, os_bagolini_test,
+      wfdt,
+      tno_stereoskopi,
+      bagolini_test,
+      od_bcva,
+      os_bcva,
     });
   };
 
@@ -165,20 +169,34 @@ const FollowUpSessionForm: React.FC<FollowUpSessionFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print-grid-2">
         <div className="space-y-2 border p-2 rounded-md">
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OD (Right Eye)</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label className="text-[10px]">BCVA</Label><Input className="h-7 text-xs" value={od_bcva} onChange={(e) => setOd_bcva(e.target.value)} /></div>
-            <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="od_wfdt" value={od_wfdt} onChange={(e) => setOd_wfdt(e.target.value)} /></div>
-            <div><Label className="text-[10px]">TNO Stereo</Label><Input className="h-7 text-xs" value={od_tno_stereoskopi} onChange={(e) => setOd_tno_stereoskopi(e.target.value)} /></div>
-            <div><Label className="text-[10px]">Bagolini</Label><Input className="h-7 text-xs" value={od_bagolini_test} onChange={(e) => setOd_bagolini_test(e.target.value)} /></div>
+          <div>
+            <Label className="text-[10px]">BCVA</Label>
+            <Input className="h-7 text-xs" value={od_bcva} onChange={(e) => setOd_bcva(e.target.value)} />
           </div>
         </div>
         <div className="space-y-2 border p-2 rounded-md">
           <h3 className="font-bold text-sm border-b pb-1 mb-2">OS (Left Eye)</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label className="text-[10px]">BCVA</Label><Input className="h-7 text-xs" value={os_bcva} onChange={(e) => setOs_bcva(e.target.value)} /></div>
-            <div><Label className="text-[10px]">WFDT</Label><Input className="h-7 text-xs" id="os_wfdt" value={os_wfdt} onChange={(e) => setOs_wfdt(e.target.value)} /></div>
-            <div><Label className="text-[10px]">TNO Stereo</Label><Input className="h-7 text-xs" value={os_tno_stereoskopi} onChange={(e) => setOs_tno_stereoskopi(e.target.value)} /></div>
-            <div><Label className="text-[10px]">Bagolini</Label><Input className="h-7 text-xs" value={os_bagolini_test} onChange={(e) => setOs_bagolini_test(e.target.value)} /></div>
+          <div>
+            <Label className="text-[10px]">BCVA</Label>
+            <Input className="h-7 text-xs" value={os_bcva} onChange={(e) => setOs_bcva(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 border p-3 rounded-md bg-muted/5">
+        <h3 className="font-bold text-sm border-b pb-1 mb-2">Binocular Vision Tests</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label className="text-[10px]">WFDT</Label>
+            <Input className="h-7 text-xs" value={wfdt} onChange={(e) => setWfdt(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-[10px]">TNO Stereo</Label>
+            <Input className="h-7 text-xs" value={tno_stereoskopi} onChange={(e) => setTno_stereoskopi(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-[10px]">Bagolini</Label>
+            <Input className="h-7 text-xs" value={bagolini_test} onChange={(e) => setBagolini_test(e.target.value)} />
           </div>
         </div>
       </div>

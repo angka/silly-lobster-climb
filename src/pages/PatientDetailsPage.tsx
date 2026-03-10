@@ -169,22 +169,23 @@ const PatientDetailsPage: React.FC = () => {
                 <div className="space-y-1">
                   <h3 className="font-bold text-xs underline">OD (Right Eye)</h3>
                   <p className="text-xs"><strong>BCVA:</strong> {session.data.od_bcva || 'N/A'}</p>
-                  <p className="text-xs"><strong>WFDT:</strong> {session.data.od_wfdt || 'N/A'}</p>
-                  <p className="text-xs"><strong>Stereo:</strong> {session.data.od_tno_stereoskopi || 'N/A'}</p>
-                  <p className="text-xs"><strong>Bagolini:</strong> {session.data.od_bagolini_test || 'N/A'}</p>
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-bold text-xs underline">OS (Left Eye)</h3>
                   <p className="text-xs"><strong>BCVA:</strong> {session.data.os_bcva || 'N/A'}</p>
-                  <p className="text-xs"><strong>WFDT:</strong> {session.data.os_wfdt || 'N/A'}</p>
-                  <p className="text-xs"><strong>Stereo:</strong> {session.data.os_tno_stereoskopi || 'N/A'}</p>
-                  <p className="text-xs"><strong>Bagolini:</strong> {session.data.os_bagolini_test || 'N/A'}</p>
                 </div>
+              </div>
+              <div className="mt-2 pt-2 border-t grid grid-cols-3 gap-2">
+                <p className="text-xs"><strong>WFDT:</strong> {session.data.wfdt || 'N/A'}</p>
+                <p className="text-xs"><strong>Stereo:</strong> {session.data.tno_stereoskopi || 'N/A'}</p>
+                <p className="text-xs"><strong>Bagolini:</strong> {session.data.bagolini_test || 'N/A'}</p>
               </div>
               <div className="mt-2 pt-2 border-t">
                 <p className="text-xs"><strong>Notes:</strong> {session.data.notes || 'No notes.'}</p>
-                {session.data.nextFollowUpDate && (
-                  <p className="text-xs mt-1"><strong>Next Follow-up:</strong> {format(new Date(session.data.nextFollowUpDate), 'PPP')}</p>
+                {session.data.followUpSchedules && session.data.followUpSchedules.length > 0 && (
+                  <p className="text-xs mt-1">
+                    <strong>Next Follow-ups:</strong> {session.data.followUpSchedules.map((d: string) => format(new Date(d), 'PP')).join(', ')}
+                  </p>
                 )}
               </div>
             </div>
