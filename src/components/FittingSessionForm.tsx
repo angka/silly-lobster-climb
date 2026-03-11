@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -212,10 +213,13 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
               </div>
-              <div className="grid grid-cols-3 gap-1 mt-1">
+              <div className="grid grid-cols-2 gap-1 mt-1">
                 <div><Label className="text-[10px]">Mean K</Label><Input className="h-7 text-xs" id="od_mean_k" value={formData.od_mean_k} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">Kmax</Label><Input className="h-7 text-xs" id="od_kmax" value={formData.od_kmax} onChange={handleChange} /></div>
-                <div><Label className="text-[10px]">Pentacam/Orbscan</Label><Input className="h-7 text-xs" id="od_pentacam_orbscan" value={formData.od_pentacam_orbscan} onChange={handleChange} /></div>
+              </div>
+              <div className="mt-1">
+                <Label className="text-[10px]">Pentacam/Orbscan</Label>
+                <Textarea className="text-xs min-h-[60px] py-1" id="od_pentacam_orbscan" value={formData.od_pentacam_orbscan} onChange={handleChange} placeholder="Enter detailed observations..." />
               </div>
               <div className="grid grid-cols-1 mt-1">
                 <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
@@ -251,10 +255,13 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
               </div>
-              <div className="grid grid-cols-3 gap-1 mt-1">
+              <div className="grid grid-cols-2 gap-1 mt-1">
                 <div><Label className="text-[10px]">Mean K</Label><Input className="h-7 text-xs" id="os_mean_k" value={formData.os_mean_k} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">Kmax</Label><Input className="h-7 text-xs" id="os_kmax" value={formData.os_kmax} onChange={handleChange} /></div>
-                <div><Label className="text-[10px]">Pentacam/Orbscan</Label><Input className="h-7 text-xs" id="os_pentacam_orbscan" value={formData.os_pentacam_orbscan} onChange={handleChange} /></div>
+              </div>
+              <div className="mt-1">
+                <Label className="text-[10px]">Pentacam/Orbscan</Label>
+                <Textarea className="text-xs min-h-[60px] py-1" id="os_pentacam_orbscan" value={formData.os_pentacam_orbscan} onChange={handleChange} placeholder="Enter detailed observations..." />
               </div>
               <div className="grid grid-cols-1 mt-1">
                 <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
