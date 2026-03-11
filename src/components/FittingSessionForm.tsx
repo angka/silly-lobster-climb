@@ -213,28 +213,25 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
               </div>
               <div className="grid grid-cols-3 gap-1 mt-1">
-                <div className="relative">
-                  <Label className="text-[10px]">Mean K</Label>
-                  <Input className="h-7 text-xs" id="od_mean_k" value={formData.od_mean_k} onChange={handleChange} />
-                  {odRecs && (
-                    <div className="absolute z-10 top-full left-0 mt-1 w-48 p-2 bg-popover border rounded-md shadow-lg text-[9px] print:hidden">
-                      <p className="font-bold border-b mb-1">Recommendations (BC):</p>
-                      <div className="grid grid-cols-2 gap-x-2">
-                        <span>KC:</span> <span className="font-medium">{odRecs.keratoconus}</span>
-                        <span>KG:</span> <span className="font-medium">{odRecs.keratoglobus}</span>
-                        <span>PMD:</span> <span className="font-medium">{odRecs.pmd}</span>
-                        <span>Graft:</span> <span className="font-medium">{odRecs.postGraft}</span>
-                        <span>Nipple:</span> <span className="font-medium">{odRecs.nippleCone}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <div><Label className="text-[10px]">Mean K</Label><Input className="h-7 text-xs" id="od_mean_k" value={formData.od_mean_k} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">Kmax</Label><Input className="h-7 text-xs" id="od_kmax" value={formData.od_kmax} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">Pentacam/Orbscan</Label><Input className="h-7 text-xs" id="od_pentacam_orbscan" value={formData.od_pentacam_orbscan} onChange={handleChange} /></div>
               </div>
               <div className="grid grid-cols-1 mt-1">
                 <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
               </div>
+              {odRecs && (
+                <div className="mt-2 p-2 bg-muted/50 border rounded-md text-[9px] print:hidden">
+                  <p className="font-bold border-b mb-1">Recommendations (BC):</p>
+                  <div className="grid grid-cols-2 gap-x-2">
+                    <span>KC:</span> <span className="font-medium">{odRecs.keratoconus}</span>
+                    <span>KG:</span> <span className="font-medium">{odRecs.keratoglobus}</span>
+                    <span>PMD:</span> <span className="font-medium">{odRecs.pmd}</span>
+                    <span>Graft:</span> <span className="font-medium">{odRecs.postGraft}</span>
+                    <span>Nipple:</span> <span className="font-medium">{odRecs.nippleCone}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border p-2 rounded-md">
@@ -255,28 +252,25 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
               </div>
               <div className="grid grid-cols-3 gap-1 mt-1">
-                <div className="relative">
-                  <Label className="text-[10px]">Mean K</Label>
-                  <Input className="h-7 text-xs" id="os_mean_k" value={formData.os_mean_k} onChange={handleChange} />
-                  {osRecs && (
-                    <div className="absolute z-10 top-full left-0 mt-1 w-48 p-2 bg-popover border rounded-md shadow-lg text-[9px] print:hidden">
-                      <p className="font-bold border-b mb-1">Recommendations (BC):</p>
-                      <div className="grid grid-cols-2 gap-x-2">
-                        <span>KC:</span> <span className="font-medium">{osRecs.keratoconus}</span>
-                        <span>KG:</span> <span className="font-medium">{osRecs.keratoglobus}</span>
-                        <span>PMD:</span> <span className="font-medium">{osRecs.pmd}</span>
-                        <span>Graft:</span> <span className="font-medium">{osRecs.postGraft}</span>
-                        <span>Nipple:</span> <span className="font-medium">{osRecs.nippleCone}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <div><Label className="text-[10px]">Mean K</Label><Input className="h-7 text-xs" id="os_mean_k" value={formData.os_mean_k} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">Kmax</Label><Input className="h-7 text-xs" id="os_kmax" value={formData.os_kmax} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">Pentacam/Orbscan</Label><Input className="h-7 text-xs" id="os_pentacam_orbscan" value={formData.os_pentacam_orbscan} onChange={handleChange} /></div>
               </div>
               <div className="grid grid-cols-1 mt-1">
                 <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
               </div>
+              {osRecs && (
+                <div className="mt-2 p-2 bg-muted/50 border rounded-md text-[9px] print:hidden">
+                  <p className="font-bold border-b mb-1">Recommendations (BC):</p>
+                  <div className="grid grid-cols-2 gap-x-2">
+                    <span>KC:</span> <span className="font-medium">{osRecs.keratoconus}</span>
+                    <span>KG:</span> <span className="font-medium">{osRecs.keratoglobus}</span>
+                    <span>PMD:</span> <span className="font-medium">{osRecs.pmd}</span>
+                    <span>Graft:</span> <span className="font-medium">{osRecs.postGraft}</span>
+                    <span>Nipple:</span> <span className="font-medium">{osRecs.nippleCone}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
