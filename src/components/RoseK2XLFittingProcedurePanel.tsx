@@ -39,6 +39,7 @@ const RoseK2XLFittingProcedurePanel: React.FC<RoseK2XLFittingProcedurePanelProps
     as_oct: '',
     terpasang: '',
     over_refraction: '',
+    bcva: '',
     vdc: '',
     custom: '',
     rx: '',

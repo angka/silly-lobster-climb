@@ -17,6 +17,7 @@ export interface SingleRoseK2XLFittingProcedureData {
   as_oct: string;
   terpasang: string;
   over_refraction: string;
+  bcva: string;
   vdc: string;
   custom: string;
   rx: string;
@@ -101,10 +102,18 @@ const SingleRoseK2XLFittingProcedureForm: React.FC<SingleRoseK2XLFittingProcedur
           <Label htmlFor={`${eye.toLowerCase()}_terpasang`}>Terpasang</Label>
           <Input id={`${eye.toLowerCase()}_terpasang`} value={data.terpasang} onChange={handleChange} className="h-8" />
         </div>
-        <div>
-          <Label htmlFor={`${eye.toLowerCase()}_over_refraction`}>Over Refraction</Label>
-          <Input id={`${eye.toLowerCase()}_over_refraction`} value={data.over_refraction} onChange={handleChange} className="h-8" />
+
+        <div className="col-span-full grid grid-cols-2 gap-2">
+          <div>
+            <Label htmlFor={`${eye.toLowerCase()}_over_refraction`}>Over Refraction</Label>
+            <Input id={`${eye.toLowerCase()}_over_refraction`} value={data.over_refraction} onChange={handleChange} className="h-8" />
+          </div>
+          <div>
+            <Label htmlFor={`${eye.toLowerCase()}_bcva`}>BCVA</Label>
+            <Input id={`${eye.toLowerCase()}_bcva`} value={data.bcva} onChange={handleChange} className="h-8" />
+          </div>
         </div>
+
         <div>
           <Label htmlFor={`${eye.toLowerCase()}_vdc`}>VDC</Label>
           <Input id={`${eye.toLowerCase()}_vdc`} value={data.vdc} onChange={handleChange} className="h-8" />
