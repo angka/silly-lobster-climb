@@ -29,6 +29,9 @@ export interface FittingSessionFormData {
   od_k2_radius: string;
   od_k2_power: string;
   od_k2_angle: string;
+  od_mean_k: string;
+  od_kmax: string;
+  od_pentacam_orbscan: string;
   od_tbut_schirmer: string;
 
   os_ucva: string;
@@ -40,6 +43,9 @@ export interface FittingSessionFormData {
   os_k2_radius: string;
   os_k2_power: string;
   os_k2_angle: string;
+  os_mean_k: string;
+  os_kmax: string;
+  os_pentacam_orbscan: string;
   os_tbut_schirmer: string;
 
   wfdt: string;
@@ -86,8 +92,8 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
       diagnosis: diagnosis,
       nextFollowUpDate: undefined,
       followUpSchedules: [],
-      od_ucva: '', od_cc: '', od_bcva: '', od_k1_radius: '', od_k1_power: '', od_k1_angle: '', od_k2_radius: '', od_k2_power: '', od_k2_angle: '', od_tbut_schirmer: '',
-      os_ucva: '', os_cc: '', os_bcva: '', os_k1_radius: '', os_k1_power: '', os_k1_angle: '', os_k2_radius: '', os_k2_power: '', os_k2_angle: '', os_tbut_schirmer: '',
+      od_ucva: '', od_cc: '', od_bcva: '', od_k1_radius: '', od_k1_power: '', od_k1_angle: '', od_k2_radius: '', od_k2_power: '', od_k2_angle: '', od_mean_k: '', od_kmax: '', od_pentacam_orbscan: '', od_tbut_schirmer: '',
+      os_ucva: '', os_cc: '', os_bcva: '', os_k1_radius: '', os_k1_power: '', os_k1_angle: '', os_k2_radius: '', os_k2_power: '', os_k2_angle: '', os_mean_k: '', os_kmax: '', os_pentacam_orbscan: '', os_tbut_schirmer: '',
       wfdt: '',
       stereoscopy: '',
       odProcedures: [],
@@ -191,6 +197,11 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="od_k2_power" value={formData.od_k2_power} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="od_k2_angle" value={formData.od_k2_angle} onChange={handleChange} /></div>
               </div>
+              <div className="grid grid-cols-3 gap-1 mt-1">
+                <div><Label className="text-[10px]">Mean K</Label><Input className="h-7 text-xs" id="od_mean_k" value={formData.od_mean_k} onChange={handleChange} /></div>
+                <div><Label className="text-[10px]">Kmax</Label><Input className="h-7 text-xs" id="od_kmax" value={formData.od_kmax} onChange={handleChange} /></div>
+                <div><Label className="text-[10px]">Pentacam/Orbscan</Label><Input className="h-7 text-xs" id="od_pentacam_orbscan" value={formData.od_pentacam_orbscan} onChange={handleChange} /></div>
+              </div>
               <div className="grid grid-cols-1 mt-1">
                 <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="od_tbut_schirmer" value={formData.od_tbut_schirmer} onChange={handleChange} /></div>
               </div>
@@ -212,6 +223,11 @@ const FittingSessionForm: React.FC<FittingSessionFormProps> = ({
                 <div><Label className="text-[10px]">K2 (mm)</Label><Input className="h-7 text-xs" id="os_k2_radius" value={formData.os_k2_radius} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">K2 (D)</Label><Input className="h-7 text-xs" id="os_k2_power" value={formData.os_k2_power} onChange={handleChange} /></div>
                 <div><Label className="text-[10px]">K2 (Ax)</Label><Input className="h-7 text-xs" id="os_k2_angle" value={formData.os_k2_angle} onChange={handleChange} /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-1 mt-1">
+                <div><Label className="text-[10px]">Mean K</Label><Input className="h-7 text-xs" id="os_mean_k" value={formData.os_mean_k} onChange={handleChange} /></div>
+                <div><Label className="text-[10px]">Kmax</Label><Input className="h-7 text-xs" id="os_kmax" value={formData.os_kmax} onChange={handleChange} /></div>
+                <div><Label className="text-[10px]">Pentacam/Orbscan</Label><Input className="h-7 text-xs" id="os_pentacam_orbscan" value={formData.os_pentacam_orbscan} onChange={handleChange} /></div>
               </div>
               <div className="grid grid-cols-1 mt-1">
                 <div><Label className="text-[10px]">TBUT</Label><Input className="h-7 text-xs" id="os_tbut_schirmer" value={formData.os_tbut_schirmer} onChange={handleChange} /></div>
