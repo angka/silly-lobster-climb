@@ -66,7 +66,12 @@ const SingleRoseK2XLFittingProcedureForm: React.FC<SingleRoseK2XLFittingProcedur
         </div>
         <div>
           <Label htmlFor={`${eye.toLowerCase()}_dia_location_movement`}>Dia/Loc/Mov</Label>
-          <Input id={`${eye.toLowerCase()}_dia_location_movement`} value={data.dia_location_movement} onChange={handleChange} className="h-8" />
+          <Textarea 
+            id={`${eye.toLowerCase()}_dia_location_movement`} 
+            value={data.dia_location_movement} 
+            onChange={handleChange} 
+            className="min-h-[40px] py-1 text-xs" 
+          />
         </div>
         
         <div className="col-span-full grid grid-cols-4 gap-2">
