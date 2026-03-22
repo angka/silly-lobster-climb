@@ -12,6 +12,7 @@ with minimum spesification ram 4Gb. if you have less than 4gb, there is a chance
 - supabase
 - nginx
 - pm2
+- tailscale (make sure you already sign up at tailscale.com (free)) 
 - this app
 
 i have bash file to autoinstall and auto configure this installation on other git rep
@@ -20,15 +21,17 @@ https://github.com/angka/angka
 
 clone that, and make it executable with chmod +x, then execute it following this order
 1. setupnode.sh
-after supabase started
+- after supabase started
 check in the terminal $ supabase status
-copy anon key/publishable key and database url to outside like nano/notepad
+cocopynon key/publishable key and database url to outside like nano/notepad
+- at tailscale installation it gave the link, open that link and login with your account, it will be connected. later we will using tailscale ip to connect the app for security reason, your device must use tailscale too, so the app cannot be visited if you are not connected to tailscale network with your account.
+- 
 
 2. setupapp.sh
-insert anon key and database url to  .env file
+this clone repositories, and the script prompt us to insert anon key and database url to  .env file during running the script
 
-3. setupngingx.sh
-
+4. setupngingx.sh
+run this script under app name folder, it will build app, run it on background using pm2, and install nginx, so you can visit the app with tailscale ip without writing port
 
 
 
