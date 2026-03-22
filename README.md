@@ -11,6 +11,7 @@ with minimum spesification ram 4Gb. if you have less than 4gb, there is a chance
 - node.js minimum (node v.20) and (npm v.10) 
 - supabase
 - nginx
+- pm2
 - this app
 
 i have bash file to autoinstall and auto configure this installation on other git rep
