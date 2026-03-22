@@ -75,7 +75,7 @@ BEGIN
     new.id,
     new.email,
     CASE 
-      WHEN new.email IN ('admin@example.com', 'angka@gmail.com') THEN 'admin'::public.user_role 
+      WHEN new.email IN ('admin@gmail.com', 'angka@gmail.com') THEN 'admin'::public.user_role 
       ELSE 'user'::public.user_role 
     END
   );
