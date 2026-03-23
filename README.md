@@ -37,6 +37,11 @@ run this script within app folder (silly-lobster-climb), it will build the app, 
 
 after complete the process, open it by access your tailscale ip, you need to create first admin account by sign up new account, username must admin@gmail.com and password you can create by yourself. i set that account under name of it if new registration under that name always became administrator. 
 
+ command maybe you need
+$ pm2 list #to check pm2 running app use
+$ supabase status #to check supabase url/anon key
+$ git pull origin master #to pull/update this repositories
+
 feature
 1. user
    default user and admin, 
