@@ -29,10 +29,14 @@ cocopynon key/publishable key and database url to outside like nano/notepad
 - at tailscale installation it gave the link, open that link and login with your account, it will be connected. later we will using tailscale ip to connect the app for security reason, your device must use tailscale too, so the app cannot be visited if you are not connected to tailscale network with your account.
 - configure the supabase in supabase studio (http://yourip:54323) open sql editor and copy command from SUPABASE_SETUP.sql provided in this repositories, run it, and done. 
 
-2. setupapp.sh
-the script prompt us to insert anon key and database url to  .env file during running the script
+2. setupappuser.sh /setupapproot.sht
+use setupapproot.sh if you are using root.sh
+./setupapproot.sh
 
-3. setupngingx.sh
+use setupappuser.sh if you are using normal user and run it using sudo command 
+sudo ./setupappuser.sh
+ 
+4. setupngingx.sh
 run this script within app folder (silly-lobster-climb), it will build the app, run it on background using pm2, and install nginx, so you can visit the app with tailscale ip without using any spesific port.
 
 after complete the process, open it by access your tailscale ip, you need to create first admin account by sign up new account, username must admin@gmail.com and password you can create by yourself. i set that account under name of it if new registration under that name always became administrator. 
