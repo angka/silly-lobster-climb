@@ -23,18 +23,24 @@ https://github.com/angka/angka
 
 clone that, and make it executable with chmod +x, then execute it following this order
 1. setupnode.sh
-- after supabase started
-check in the terminal $ supabase status
-cocopynon key/publishable key and database url to outside like nano/notepad
+
+curl -fsSL https://raw.githubusercontent.com/angka/angka/refs/heads/master/setupnode.sh | sudo bash
+
 - at tailscale installation it gave the link, open that link and login with your account, it will be connected. later we will using tailscale ip to connect the app for security reason, your device must use tailscale too, so the app cannot be visited if you are not connected to tailscale network with your account.
 - configure the supabase in supabase studio (http://yourip:54323) open sql editor and copy command from SUPABASE_SETUP.sql provided in this repositories, run it, and done. 
 
 2. setupappuser.sh /setupapproot.sht
+
+curl -fsSL https://raw.githubusercontent.com/angka/angka/refs/heads/master/setupappuser.sh | sudo bash
+
+or
+
+curl -fsSL https://raw.githubusercontent.com/angka/angka/refs/heads/master/setupapproot.sh | sudo bash
+
 use setupapproot.sh if you are using root.sh
 ./setupapproot.sh
 
-use setupappuser.sh if you are using normal user and run it using sudo command 
-sudo ./setupappuser.sh
+use setupappuser.sh if you are using normal user
  
 4. setupngingx.sh
 run this script within app folder (silly-lobster-climb), it will build the app, run it on background using pm2, and install nginx, so you can visit the app with tailscale ip without using any spesific port.
